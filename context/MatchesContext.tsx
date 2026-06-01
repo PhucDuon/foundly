@@ -27,6 +27,8 @@ type MatchesContextValue = {
   fetchMatches: () => Promise<void>;
   addMatch: (entry: MatchEntry) => void;
   removeMatch: (matchId: string) => void;
+  likesCount: number;
+  fetchLikesCount: () => Promise<void>;
 };
 
 const MatchesContext = createContext<MatchesContextValue>({
@@ -34,11 +36,14 @@ const MatchesContext = createContext<MatchesContextValue>({
   fetchMatches: async () => {},
   addMatch: () => {},
   removeMatch: () => {},
+  likesCount: 0,
+  fetchLikesCount: async () => {},
 });
 
 export function MatchesProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth();
   const [matches, setMatches] = useState<MatchEntry[]>([]);
+  const [likesCount, setLikesCount] = useState(0);
 
   const fetchMatches = useCallback(async () => {
     if (!profile) return;
@@ -79,8 +84,16 @@ export function MatchesProvider({ children }: { children: React.ReactNode }) {
     setMatches(prev => prev.filter(m => m.matchId !== matchId));
   }, []);
 
+  const fetchLikesCount = useCallback(async () => {
+    if (!profile) return;
+    try {
+      const data = await api.get<any[]>('/matches/likes');
+      setLikesCount(data.length);
+    } catch {}
+  }, [profile]);
+
   return (
-    <MatchesContext.Provider value={{ matches, fetchMatches, addMatch, removeMatch }}>
+    <MatchesContext.Provider value={{ matches, fetchMatches, addMatch, removeMatch, likesCount, fetchLikesCount }}>
       {children}
     </MatchesContext.Provider>
   );

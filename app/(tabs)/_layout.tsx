@@ -1,4 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
+import { useEffect } from 'react';
 import { Text } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../context/AuthContext';
@@ -6,11 +7,12 @@ import { useMatches } from '../../context/MatchesContext';
 
 export default function TabLayout() {
   const { isLoggedIn, isLoading, profile } = useAuth();
-  const { matches } = useMatches();
+  const { likesCount, fetchLikesCount } = useMatches();
+
+  useEffect(() => { fetchLikesCount(); }, [fetchLikesCount]);
 
   if (isLoading) return null;
   if (!isLoggedIn) return <Redirect href={'/login' as any} />;
-  // New Google (or incomplete) users must finish onboarding first
   if (profile && profile.skills.length === 0 && profile.role === 'Other') {
     return <Redirect href={'/onboarding' as any} />;
   }
@@ -44,7 +46,7 @@ export default function TabLayout() {
         options={{
           title: 'Matches',
           tabBarIcon: () => <Text style={{ fontSize: 20 }}>💬</Text>,
-          tabBarBadge: matches.length > 0 ? matches.length : undefined,
+          tabBarBadge: likesCount > 0 ? likesCount : undefined,
         }}
       />
       <Tabs.Screen

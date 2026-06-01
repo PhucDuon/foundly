@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,26 +10,20 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { useMatches } from '../../context/MatchesContext';
-import { api } from '../../services/api';
 import { Avatar } from '../../components/Avatar';
 
 export default function MatchesScreen() {
   const router = useRouter();
-  const { matches, fetchMatches } = useMatches();
-  const [likesCount, setLikesCount] = useState(0);
+  const { matches, fetchMatches, likesCount, fetchLikesCount } = useMatches();
 
   useFocusEffect(
     useCallback(() => {
-      // Small delay prevents unmatched/blocked users reappearing briefly
-      // due to the race between the DELETE completing and Supabase propagating it
       const id = setTimeout(() => {
         fetchMatches();
-        api.get<any[]>('/matches/likes')
-          .then(data => setLikesCount(data.length))
-          .catch(() => {});
+        fetchLikesCount();
       }, 600);
       return () => clearTimeout(id);
-    }, [fetchMatches])
+    }, [fetchMatches, fetchLikesCount])
   );
 
   const goToChat = (matchId: string) => router.push(`/chat/${matchId}` as any);
