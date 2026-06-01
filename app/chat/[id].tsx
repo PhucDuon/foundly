@@ -151,9 +151,7 @@ export default function ChatScreen() {
         sentAt: new Date(m.sent_at).getTime(),
         readAt: m.read_at ? new Date(m.read_at).getTime() : null,
       })));
-      // Mark received messages as read
-      api.patch(`/messages/${matchId}/read`, {}).catch(() => {});
-    } catch {}
+      } catch {}
   }, [matchId, profile]);
 
   useEffect(() => {
