@@ -73,9 +73,64 @@ export default function ChatScreen() {
   const [uploading, setUploading] = useState(false);
   const listRef = useRef<FlatList<ListItem>>(null);
 
+  const { removeMatch } = useMatches();
   const matchEntry = matches.find(m => m.matchId === matchId);
   const displayName = matchEntry?.name ?? 'Match';
   const displayEmoji = matchEntry?.emoji ?? '🤝';
+
+  const doUnmatch = async () => {
+    try {
+      await api.delete(`/matches/${matchId}`);
+      removeMatch(matchId!);
+      router.back();
+    } catch { Alert.alert('Error', 'Failed to unmatch.'); }
+  };
+
+  const doBlock = async () => {
+    try {
+      await api.post(`/users/${matchEntry?.userId}/block`, {});
+      await api.delete(`/matches/${matchId}`);
+      removeMatch(matchId!);
+      router.back();
+    } catch { Alert.alert('Error', 'Failed to block user.'); }
+  };
+
+  const doReport = (reason: string) => {
+    api.post(`/users/${matchEntry?.userId}/report`, { reason }).catch(() => {});
+    Alert.alert('Reported', `Thank you. We'll review ${displayName}'s profile.`);
+  };
+
+  const openOptions = () => {
+    Alert.alert(displayName, 'What would you like to do?', [
+      {
+        text: '💔 Unmatch',
+        style: 'destructive',
+        onPress: () => Alert.alert('Unmatch', `Remove your match with ${displayName}? This will delete the conversation.`, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Unmatch', style: 'destructive', onPress: doUnmatch },
+        ]),
+      },
+      {
+        text: '🚩 Report',
+        onPress: () => Alert.alert('Report', `Why are you reporting ${displayName}?`, [
+          { text: 'Inappropriate behavior', onPress: () => doReport('inappropriate_behavior') },
+          { text: 'Spam', onPress: () => doReport('spam') },
+          { text: 'Fake profile', onPress: () => doReport('fake_profile') },
+          { text: 'Harassment', onPress: () => doReport('harassment') },
+          { text: 'Cancel', style: 'cancel' },
+        ]),
+      },
+      {
+        text: '🚫 Block',
+        style: 'destructive',
+        onPress: () => Alert.alert('Block User', `Block ${displayName}? They won't be able to see or match with you.`, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Block', style: 'destructive', onPress: doBlock },
+        ]),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
 
   const loadMessages = useCallback(async () => {
     if (!matchId || !profile) return;
@@ -262,6 +317,9 @@ export default function ChatScreen() {
             </View>
           </View>
         </View>
+        <TouchableOpacity onPress={openOptions} style={styles.optionsBtn} activeOpacity={0.7}>
+          <Text style={styles.optionsDots}>⋯</Text>
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -326,6 +384,8 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 12 },
+  optionsBtn: { marginLeft: 'auto', padding: 8 },
+  optionsDots: { fontSize: 22, color: Colors.muted, fontWeight: '700', letterSpacing: 1 },
   backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
   backArrow: { fontSize: 28, color: Colors.text, lineHeight: 34, marginTop: -2 },
   headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },

@@ -58,7 +58,14 @@ async def discover(current_user=Depends(get_current_user), limit: int = 20):
     my_profile = my_resp.data or {}
 
     swiped = supabase.table("swipes").select("swiped_id").eq("swiper_id", uid).execute()
-    exclude = {s["swiped_id"] for s in swiped.data} | {uid}
+    blocked_out = supabase.table("blocks").select("blocked_id").eq("blocker_id", uid).execute()
+    blocked_in  = supabase.table("blocks").select("blocker_id").eq("blocked_id", uid).execute()
+    exclude = (
+        {s["swiped_id"] for s in swiped.data}
+        | {b["blocked_id"] for b in blocked_out.data}
+        | {b["blocker_id"] for b in blocked_in.data}
+        | {uid}
+    )
 
     all_profiles = supabase.table("profiles").select("*").execute()
 
@@ -70,6 +77,27 @@ async def discover(current_user=Depends(get_current_user), limit: int = 20):
 
     candidates.sort(key=lambda x: x["compatibility_score"], reverse=True)
     return candidates[:limit]
+
+
+@router.post("/{user_id}/block")
+async def block_user(user_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user.id)
+    try:
+        supabase.table("blocks").insert({"blocker_id": uid, "blocked_id": user_id}).execute()
+    except Exception:
+        pass  # already blocked
+    return {"ok": True}
+
+
+@router.post("/{user_id}/report")
+async def report_user(user_id: str, body: dict, current_user=Depends(get_current_user)):
+    uid = str(current_user.id)
+    supabase.table("reports").insert({
+        "reporter_id": uid,
+        "reported_id": user_id,
+        "reason": body.get("reason", "other"),
+    }).execute()
+    return {"ok": True}
 
 
 @router.get("/{user_id}")

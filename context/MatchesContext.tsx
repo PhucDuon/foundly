@@ -24,12 +24,14 @@ type MatchesContextValue = {
   matches: MatchEntry[];
   fetchMatches: () => Promise<void>;
   addMatch: (entry: MatchEntry) => void;
+  removeMatch: (matchId: string) => void;
 };
 
 const MatchesContext = createContext<MatchesContextValue>({
   matches: [],
   fetchMatches: async () => {},
   addMatch: () => {},
+  removeMatch: () => {},
 });
 
 export function MatchesProvider({ children }: { children: React.ReactNode }) {
@@ -65,8 +67,12 @@ export function MatchesProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const removeMatch = useCallback((matchId: string) => {
+    setMatches(prev => prev.filter(m => m.matchId !== matchId));
+  }, []);
+
   return (
-    <MatchesContext.Provider value={{ matches, fetchMatches, addMatch }}>
+    <MatchesContext.Provider value={{ matches, fetchMatches, addMatch, removeMatch }}>
       {children}
     </MatchesContext.Provider>
   );

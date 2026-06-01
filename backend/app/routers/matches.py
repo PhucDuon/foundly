@@ -76,5 +76,9 @@ async def unmatch(match_id: str, current_user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Match not found.")
     if uid not in (match.data["user1_id"], match.data["user2_id"]):
         raise HTTPException(status_code=403, detail="Not your match.")
+    other_id = match.data["user2_id"] if match.data["user1_id"] == uid else match.data["user1_id"]
     supabase.table("matches").delete().eq("id", match_id).execute()
+    # Clear swipes so neither appears in each other's discover/likes again
+    supabase.table("swipes").delete().eq("swiper_id", uid).eq("swiped_id", other_id).execute()
+    supabase.table("swipes").delete().eq("swiper_id", other_id).eq("swiped_id", uid).execute()
     return {"message": "Unmatched."}
