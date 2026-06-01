@@ -80,6 +80,8 @@ export default function ChatScreen() {
   const [input, setInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const listRef = useRef<FlatList<ListItem>>(null);
+  // Ref-based ID set so Realtime handler is never stale (avoids React batching race)
+  const knownIds = useRef(new Set<string>());
 
   const { removeMatch } = useMatches();
   const matchEntry = matches.find(m => m.matchId === matchId);
@@ -144,6 +146,7 @@ export default function ChatScreen() {
     if (!matchId || !profile) return;
     try {
       const data = await api.get<any[]>(`/messages/${matchId}`);
+      knownIds.current = new Set(data.map((m: any) => m.id));
       setMessages(data.map(m => ({
         id: m.id,
         text: m.content,
@@ -168,20 +171,15 @@ export default function ChatScreen() {
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
         (payload) => {
           const m = payload.new as any;
-          setMessages(prev => {
-            if (prev.some(msg => msg.id === m.id)) return prev;
-            // Mark as read if this is an incoming message
-            if (m.sender_id !== profile.id) {
-              api.patch(`/messages/${matchId}/read`, {}).catch(() => {});
-            }
-            return [...prev, {
-              id: m.id,
-              text: m.content,
-              fromMe: m.sender_id === profile.id,
-              sentAt: new Date(m.sent_at).getTime(),
-              readAt: m.read_at ? new Date(m.read_at).getTime() : null,
-            }];
-          });
+          if (knownIds.current.has(m.id)) return; // already added — skip
+          knownIds.current.add(m.id);
+          setMessages(prev => [...prev, {
+            id: m.id,
+            text: m.content,
+            fromMe: m.sender_id === profile.id,
+            sentAt: new Date(m.sent_at).getTime(),
+            readAt: m.read_at ? new Date(m.read_at).getTime() : null,
+          }]);
         }
       )
       .on(
@@ -236,6 +234,7 @@ export default function ChatScreen() {
 
     try {
       const sent = await api.post<any>(`/messages/${matchId}`, { content: text });
+      knownIds.current.add(sent.id);
       setMessages(prev => prev.map(m =>
         m.id === tempId
           ? { id: sent.id, text: sent.content, fromMe: true, sentAt: new Date(sent.sent_at).getTime() }
@@ -282,6 +281,7 @@ export default function ChatScreen() {
       const { url } = await res.json();
 
       const sent = await api.post<any>(`/messages/${matchId}`, { content: `${IMAGE_PREFIX}${url}` });
+      knownIds.current.add(sent.id);
       setMessages(prev => prev.map(m =>
         m.id === tempId
           ? { id: sent.id, text: sent.content, fromMe: true, sentAt: new Date(sent.sent_at).getTime() }
