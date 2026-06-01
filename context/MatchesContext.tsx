@@ -20,6 +20,7 @@ export type MatchEntry = {
   bio: string;
   avatarUrl?: string | null;
   lastMessageAt?: string | null;
+  hasUnread?: boolean;
 };
 
 type MatchesContextValue = {
@@ -65,6 +66,7 @@ export function MatchesProvider({ children }: { children: React.ReactNode }) {
           bio: other.bio ?? '',
           avatarUrl: other.avatar_url ?? null,
           lastMessageAt: m.last_message_at ?? null,
+          hasUnread: m.has_unread ?? false,
         });
       }
 

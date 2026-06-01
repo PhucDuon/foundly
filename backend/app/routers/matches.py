@@ -64,6 +64,13 @@ async def get_matches(current_user=Depends(get_current_user)):
         enriched.append({**m, "last_message_at": last_at})
 
     enriched.sort(key=lambda x: x["last_message_at"], reverse=True)
+
+    # Tag matches that have unread messages
+    unread = supabase.rpc("get_unread_match_ids", {"p_user_id": uid}).execute()
+    unread_ids = set(unread.data or [])
+    for m in enriched:
+        m["has_unread"] = m["id"] in unread_ids
+
     return enriched
 
 

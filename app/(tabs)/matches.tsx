@@ -98,12 +98,21 @@ export default function MatchesScreen() {
                 <TouchableOpacity key={m.matchId} style={styles.convoItem} activeOpacity={0.7} onPress={() => goToChat(m.matchId)}>
                   <Avatar avatarUrl={m.avatarUrl} emoji={m.emoji} size={52} />
                   <View style={styles.convoInfo}>
-                    <Text style={styles.convoName}>{m.name}</Text>
-                    <Text style={styles.convoPreview} numberOfLines={1}>{m.role}</Text>
+                    <Text style={[styles.convoName, m.hasUnread && styles.convoNameUnread]}>
+                      {m.name}
+                    </Text>
+                    <Text style={[styles.convoPreview, m.hasUnread && styles.convoPreviewUnread]} numberOfLines={1}>
+                      {m.role}
+                    </Text>
                   </View>
-                  {m.lastMessageAt && (
-                    <Text style={styles.tapHint}>{formatTime(m.lastMessageAt)}</Text>
-                  )}
+                  <View style={styles.convoMeta}>
+                    {m.lastMessageAt && (
+                      <Text style={[styles.tapHint, m.hasUnread && styles.tapHintUnread]}>
+                        {formatTime(m.lastMessageAt)}
+                      </Text>
+                    )}
+                    {m.hasUnread && <View style={styles.unreadDot} />}
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
@@ -148,7 +157,11 @@ const styles = StyleSheet.create({
   convoAv: { width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.surface2, alignItems: 'center', justifyContent: 'center' },
   convoInfo: { flex: 1 },
   convoName: { fontWeight: '600', fontSize: 15, color: Colors.text, marginBottom: 2 },
+  convoNameUnread: { fontWeight: '800', color: '#fff' },
   convoPreview: { fontSize: 13, color: Colors.muted },
-  convoMeta: { alignItems: 'flex-end' },
+  convoPreviewUnread: { color: Colors.text },
+  convoMeta: { alignItems: 'flex-end', gap: 6 },
   tapHint: { fontSize: 11, color: Colors.muted },
+  tapHintUnread: { color: Colors.accent, fontWeight: '600' },
+  unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.accent },
 });
