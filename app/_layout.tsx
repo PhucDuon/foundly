@@ -66,6 +66,7 @@ export default function RootLayout() {
           <Stack.Screen name="chat/[id]" />
           <Stack.Screen name="edit-profile" />
           <Stack.Screen name="create-idea" />
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="likes" />
         </Stack>
       </MatchesProvider>
