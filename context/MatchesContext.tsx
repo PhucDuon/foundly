@@ -42,20 +42,25 @@ export function MatchesProvider({ children }: { children: React.ReactNode }) {
     if (!profile) return;
     try {
       const data = await api.get<any[]>('/matches');
-      setMatches(
-        data.map(m => {
-          const other = m.user1_id === profile.id ? m.user2 : m.user1;
-          return {
-            matchId: m.id,
-            userId: other.id,
-            name: other.name,
-            emoji: other.emoji ?? '🚀',
-            role: other.role ?? '',
-            bio: other.bio ?? '',
-            avatarUrl: other.avatar_url ?? null,
-          };
-        })
-      );
+      const seen = new Set<string>();
+      const entries: MatchEntry[] = [];
+
+      for (const m of data) {
+        const other = m.user1_id === profile.id ? m.user2 : m.user1;
+        if (!other?.id || seen.has(other.id)) continue; // skip duplicates
+        seen.add(other.id);
+        entries.push({
+          matchId: m.id,
+          userId: other.id,
+          name: other.name,
+          emoji: other.emoji ?? '🚀',
+          role: other.role ?? '',
+          bio: other.bio ?? '',
+          avatarUrl: other.avatar_url ?? null,
+        });
+      }
+
+      setMatches(entries);
     } catch (e) {
       console.error('fetchMatches:', e);
     }
