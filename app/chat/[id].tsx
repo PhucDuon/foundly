@@ -51,9 +51,17 @@ function formatTime(ts: number) {
 }
 
 function buildListItems(messages: Message[]): ListItem[] {
+  // Deduplicate by ID first (guards against Realtime + API response race)
+  const seen = new Set<string>();
+  const unique = messages.filter(m => {
+    if (seen.has(m.id)) return false;
+    seen.add(m.id);
+    return true;
+  });
+
   const items: ListItem[] = [];
-  messages.forEach((msg, i) => {
-    const prev = messages[i - 1];
+  unique.forEach((msg, i) => {
+    const prev = unique[i - 1];
     if (!prev || !isSameDay(prev.sentAt, msg.sentAt)) {
       items.push({ _type: 'separator', label: formatSeparator(msg.sentAt), id: `sep_${msg.sentAt}` });
     }
