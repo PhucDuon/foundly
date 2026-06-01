@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
+import { AntDesign } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../context/AuthContext';
 
@@ -111,7 +112,7 @@ export default function LoginScreen() {
             disabled={loading}
             activeOpacity={0.85}
           >
-            <Text style={styles.btnGoogleIcon}>G</Text>
+            <AntDesign name="google" size={20} color="#4285F4" />
             <Text style={styles.btnGoogleText}>Continue with Google</Text>
           </TouchableOpacity>
         </View>
@@ -177,10 +178,6 @@ const styles = StyleSheet.create({
     borderRadius: 16, paddingVertical: 15,
     borderWidth: 1.5, borderColor: Colors.border,
     backgroundColor: Colors.surface,
-  },
-  btnGoogleIcon: {
-    fontSize: 18, fontWeight: '800', color: '#4285F4',
-    width: 24, textAlign: 'center',
   },
   btnGoogleText: { color: Colors.text, fontWeight: '600', fontSize: 15 },
   footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingBottom: 8 },
