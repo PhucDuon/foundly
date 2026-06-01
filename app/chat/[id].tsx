@@ -210,6 +210,24 @@ export default function ChatScreen() {
     }
   }, [messages.length]);
 
+  // Poll every 5s to refresh read_at on sent messages
+  useEffect(() => {
+    if (!matchId || !profile) return;
+    const interval = setInterval(async () => {
+      try {
+        const data = await api.get<any[]>(`/messages/${matchId}`);
+        setMessages(prev => prev.map(msg => {
+          const fresh = data.find((m: any) => m.id === msg.id);
+          if (fresh?.read_at && !msg.readAt) {
+            return { ...msg, readAt: new Date(fresh.read_at).getTime() };
+          }
+          return msg;
+        }));
+      } catch {}
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [matchId, profile]);
+
   const sendText = useCallback(async () => {
     const text = input.trim();
     if (!text || !matchId) return;
