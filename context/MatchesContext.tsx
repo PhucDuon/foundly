@@ -18,6 +18,7 @@ export type MatchEntry = {
   role: string;
   bio: string;
   avatarUrl?: string | null;
+  lastMessageAt?: string | null;
 };
 
 type MatchesContextValue = {
@@ -57,6 +58,7 @@ export function MatchesProvider({ children }: { children: React.ReactNode }) {
           role: other.role ?? '',
           bio: other.bio ?? '',
           avatarUrl: other.avatar_url ?? null,
+          lastMessageAt: m.last_message_at ?? null,
         });
       }
 

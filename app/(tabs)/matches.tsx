@@ -34,6 +34,15 @@ export default function MatchesScreen() {
 
   const goToChat = (matchId: string) => router.push(`/chat/${matchId}` as any);
 
+  const formatTime = (iso: string | null | undefined) => {
+    if (!iso) return '';
+    const date = new Date(iso);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    if (isToday) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.navbar}>
@@ -98,9 +107,9 @@ export default function MatchesScreen() {
                     <Text style={styles.convoName}>{m.name}</Text>
                     <Text style={styles.convoPreview} numberOfLines={1}>{m.role}</Text>
                   </View>
-                  <View style={styles.convoMeta}>
-                    <Text style={styles.tapHint}>Tap to chat →</Text>
-                  </View>
+                  {m.lastMessageAt && (
+                    <Text style={styles.tapHint}>{formatTime(m.lastMessageAt)}</Text>
+                  )}
                 </TouchableOpacity>
               ))}
             </View>

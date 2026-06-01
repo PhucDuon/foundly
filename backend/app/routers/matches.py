@@ -46,7 +46,25 @@ async def get_matches(current_user=Depends(get_current_user)):
         .or_(f"user1_id.eq.{uid},user2_id.eq.{uid}")
         .execute()
     )
-    return matches.data
+    if not matches.data:
+        return []
+
+    # Attach last message time so we can sort by most recent activity
+    enriched = []
+    for m in matches.data:
+        last = (
+            supabase.table("messages")
+            .select("sent_at")
+            .eq("match_id", m["id"])
+            .order("sent_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        last_at = last.data[0]["sent_at"] if last.data else m["matched_at"]
+        enriched.append({**m, "last_message_at": last_at})
+
+    enriched.sort(key=lambda x: x["last_message_at"], reverse=True)
+    return enriched
 
 
 @router.get("/likes")

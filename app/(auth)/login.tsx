@@ -106,7 +106,14 @@ export default function LoginScreen() {
               setLoading(true);
               setError('');
               try { await loginWithGoogle(); }
-              catch (e) { setError((e as Error).message || 'Google sign-in failed.'); }
+              catch (e) {
+                const msg = (e as Error).message || '';
+                if (msg === 'Sign-in was cancelled') {
+                  setError('');
+                } else {
+                  setError('Google Sign-In requires a native build. Use email/password for now.');
+                }
+              }
               finally { setLoading(false); }
             }}
             disabled={loading}
