@@ -17,7 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoggedIn, isLoading } = useAuth();
+  const { login, loginWithGoogle, isLoggedIn, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -93,6 +93,27 @@ export default function LoginScreen() {
             }
           </TouchableOpacity>
 
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            style={styles.btnGoogle}
+            onPress={async () => {
+              setLoading(true);
+              setError('');
+              try { await loginWithGoogle(); }
+              catch (e) { setError((e as Error).message || 'Google sign-in failed.'); }
+              finally { setLoading(false); }
+            }}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.btnGoogleIcon}>G</Text>
+            <Text style={styles.btnGoogleText}>Continue with Google</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
@@ -148,6 +169,20 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  dividerText: { color: Colors.muted, fontSize: 13 },
+  btnGoogle: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    borderRadius: 16, paddingVertical: 15,
+    borderWidth: 1.5, borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  btnGoogleIcon: {
+    fontSize: 18, fontWeight: '800', color: '#4285F4',
+    width: 24, textAlign: 'center',
+  },
+  btnGoogleText: { color: Colors.text, fontWeight: '600', fontSize: 15 },
   footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingBottom: 8 },
   footerText: { color: Colors.muted, fontSize: 14 },
   footerLink: { color: Colors.accent, fontWeight: '600', fontSize: 14 },

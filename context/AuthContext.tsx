@@ -1,7 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { api, setAuthToken } from '../services/api';
-import { setRealtimeSession } from '../services/supabase';
+import { supabase, setRealtimeSession } from '../services/supabase';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export type UserProfile = {
   id: string;
@@ -32,6 +36,7 @@ type AuthContextValue = {
   isLoading: boolean;
   profile: UserProfile | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
@@ -70,6 +75,7 @@ const AuthContext = createContext<AuthContextValue>({
   isLoading: true,
   profile: null,
   login: async () => {},
+  loginWithGoogle: async () => {},
   register: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
@@ -147,6 +153,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.multiRemove([TOKEN_KEY, PROFILE_KEY]);
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    const redirectUri = Linking.createURL('auth');
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: redirectUri, skipBrowserRedirect: true },
+    });
+    if (error || !data.url) throw new Error(error?.message || 'Google sign-in failed');
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+    if (result.type !== 'success') throw new Error('Sign-in was cancelled');
+
+    const fragment = result.url.split('#')[1] || '';
+    const access_token = new URLSearchParams(fragment).get('access_token');
+    if (!access_token) throw new Error('No access token received');
+
+    setAuthToken(access_token);
+    setRealtimeSession(access_token);
+    const fresh = await api.get<any>('/auth/me');
+    const p = mapProfile(fresh);
+    setProfile(p);
+    await persist(access_token, p);
+  }, []);
+
   const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
     const body: any = { ...updates };
     if ('experienceLevel' in body) {
@@ -164,7 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn: !!profile, isLoading, profile, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ isLoggedIn: !!profile, isLoading, profile, login, loginWithGoogle, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

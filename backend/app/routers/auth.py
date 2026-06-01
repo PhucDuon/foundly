@@ -77,5 +77,27 @@ async def logout(current_user=Depends(get_current_user)):
 
 @router.get("/me")
 async def get_me(current_user=Depends(get_current_user)):
-    profile = supabase.table("profiles").select("*").eq("id", str(current_user.id)).single().execute()
+    uid = str(current_user.id)
+    profile = supabase.table("profiles").select("*").eq("id", uid).single().execute()
+
+    if not profile.data:
+        # Auto-create profile for OAuth users (Google, etc.)
+        meta = current_user.user_metadata or {}
+        name = meta.get("full_name") or meta.get("name") or (current_user.email or "").split("@")[0] or "User"
+        new_profile = {
+            "id": uid,
+            "name": name,
+            "email": current_user.email or "",
+            "role": "Other",
+            "experience_level": "Beginner",
+            "bio": "",
+            "location": "",
+            "skills": [],
+            "interests": [],
+            "emoji": "🚀",
+            "avatar_url": meta.get("avatar_url") or meta.get("picture"),
+        }
+        result = supabase.table("profiles").insert(new_profile).execute()
+        return result.data[0]
+
     return profile.data
