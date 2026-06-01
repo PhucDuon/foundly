@@ -23,9 +23,8 @@ async def get_messages(match_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
     _assert_match_member(match_id, uid)
 
-    # Mark all received messages as read automatically
-    now = datetime.now(timezone.utc).isoformat()
-    supabase.table("messages").update({"read_at": now}).eq("match_id", match_id).neq("sender_id", uid).execute()
+    # Mark received messages as read via RPC (supabase-py filters are unreliable)
+    supabase.rpc("mark_messages_read", {"p_match_id": match_id, "p_reader_id": uid}).execute()
 
     messages = (
         supabase.table("messages")
