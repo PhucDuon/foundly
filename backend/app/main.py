@@ -23,3 +23,7 @@ app.include_router(ideas.router,    prefix="/ideas",    tags=["Ideas"])
 @app.get("/")
 def root():
     return {"status": "ok", "app": "StartupMatch API"}
+
+@app.get("/ping")
+def ping():
+    return "pong"

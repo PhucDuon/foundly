@@ -3,6 +3,11 @@
 // Physical device → replace with your machine's local IP, e.g. http://192.168.1.x:8000
 export const BASE_URL = 'https://foundly-0k7n.onrender.com';
 
+// Keep Render free tier awake — ping every 9 minutes
+setInterval(() => {
+  fetch(`${BASE_URL}/ping`).catch(() => {});
+}, 9 * 60 * 1000);
+
 let _token: string | null = null;
 
 export function setAuthToken(token: string | null) {

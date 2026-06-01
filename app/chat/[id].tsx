@@ -222,7 +222,7 @@ export default function ChatScreen() {
           return msg;
         }));
       } catch {}
-    }, 5000);
+    }, 15000);
     return () => clearInterval(interval);
   }, [matchId, profile]);
 
