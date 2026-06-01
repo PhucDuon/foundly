@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { CardData } from '../data/cards';
+import { Avatar } from './Avatar';
+import { useAuth } from '../context/AuthContext';
 
 type Props = {
   visible: boolean;
@@ -16,6 +18,8 @@ type Props = {
 };
 
 export function MatchModal({ visible, card, onClose }: Props) {
+  const { profile } = useAuth();
+
   // Keep last non-null card so the Modal can play its fade-out animation before unmounting
   const lastCard = useRef<CardData | null>(null);
   if (card) lastCard.current = card;
@@ -36,14 +40,27 @@ export function MatchModal({ visible, card, onClose }: Props) {
             <Text style={{ fontWeight: '700', color: Colors.text }}>{displayCard.name}</Text>{' '}
             both want to collaborate. Say hello! 👋
           </Text>
+
+          {/* Avatars — your photo overlapping theirs */}
           <View style={styles.avatars}>
-            <View style={[styles.avatar, { marginRight: -14, zIndex: 1 }]}>
-              <Text style={styles.avatarEmoji}>🧑‍💻</Text>
+            <View style={[styles.avatarWrap, { marginRight: -14, zIndex: 1 }]}>
+              <Avatar
+                avatarUrl={profile?.avatarUrl}
+                emoji={profile?.emoji ?? '🧑‍💻'}
+                size={70}
+                borderColor={Colors.bg}
+              />
             </View>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarEmoji}>{displayCard.emoji}</Text>
+            <View style={styles.avatarWrap}>
+              <Avatar
+                avatarUrl={displayCard.avatarUrl}
+                emoji={displayCard.emoji}
+                size={70}
+                borderColor={Colors.bg}
+              />
             </View>
           </View>
+
           <TouchableOpacity style={styles.btnChat} onPress={() => onClose(true)} activeOpacity={0.85}>
             <Text style={styles.btnChatText}>💬 Send a Message</Text>
           </TouchableOpacity>
@@ -82,17 +99,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   avatars: { flexDirection: 'row', marginBottom: 24 },
-  avatar: {
-    width: 70,
-    height: 70,
+  avatarWrap: {
     borderRadius: 35,
-    backgroundColor: Colors.surface2,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 3,
     borderColor: Colors.bg,
+    overflow: 'hidden',
   },
-  avatarEmoji: { fontSize: 32 },
   btnChat: {
     width: '100%',
     backgroundColor: Colors.accent,
