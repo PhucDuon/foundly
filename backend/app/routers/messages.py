@@ -67,7 +67,7 @@ async def mark_read(match_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
     _assert_match_member(match_id, uid)
     now = datetime.now(timezone.utc).isoformat()
-    supabase.table("messages").update({"read_at": now}).eq("match_id", match_id).neq("sender_id", uid).is_("read_at", "null").execute()
+    supabase.table("messages").update({"read_at": now}).eq("match_id", match_id).neq("sender_id", uid).execute()
     return {"ok": True}
 
 
