@@ -171,12 +171,14 @@ export default function ChatScreen() {
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
         (payload) => {
           const m = payload.new as any;
-          if (knownIds.current.has(m.id)) return; // already added — skip
+          // Own messages are handled by optimistic update — Realtime would duplicate them
+          if (m.sender_id === profile.id) return;
+          if (knownIds.current.has(m.id)) return;
           knownIds.current.add(m.id);
           setMessages(prev => [...prev, {
             id: m.id,
             text: m.content,
-            fromMe: m.sender_id === profile.id,
+            fromMe: false,
             sentAt: new Date(m.sent_at).getTime(),
             readAt: m.read_at ? new Date(m.read_at).getTime() : null,
           }]);
