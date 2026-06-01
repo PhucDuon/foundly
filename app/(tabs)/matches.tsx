@@ -20,10 +20,15 @@ export default function MatchesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchMatches();
-      api.get<any[]>('/matches/likes')
-        .then(data => setLikesCount(data.length))
-        .catch(() => {});
+      // Small delay prevents unmatched/blocked users reappearing briefly
+      // due to the race between the DELETE completing and Supabase propagating it
+      const id = setTimeout(() => {
+        fetchMatches();
+        api.get<any[]>('/matches/likes')
+          .then(data => setLikesCount(data.length))
+          .catch(() => {});
+      }, 600);
+      return () => clearTimeout(id);
     }, [fetchMatches])
   );
 
