@@ -1,7 +1,7 @@
 // Base URL for the FastAPI backend.
 // iOS Simulator on the same Mac → 127.0.0.1 works fine.
 // Physical device → replace with your machine's local IP, e.g. http://192.168.1.x:8000
-export const BASE_URL = 'http://172.20.10.4:8000';
+export const BASE_URL = 'https://foundly-0k7n.onrender.com';
 
 let _token: string | null = null;
 
