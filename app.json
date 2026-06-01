@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Foundly",
+    "slug": "startupmatch",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0a0a0f"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.startupmatch.app",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0a0f"
+      },
+      "package": "com.startupmatch.app"
+    },
+    "scheme": "startupmatch",
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b1d4407b-bd8d-4de9-822c-4136c2508424"
+      }
+    },
+    "owner": "phucgiotai"
+  }
+}
