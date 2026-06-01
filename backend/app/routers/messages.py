@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from app.database import supabase
 from app.dependencies import get_current_user
@@ -59,6 +60,15 @@ async def send_message(match_id: str, data: MessageCreate, current_user=Depends(
     )
 
     return message.data[0]
+
+
+@router.patch("/{match_id}/read")
+async def mark_read(match_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user.id)
+    _assert_match_member(match_id, uid)
+    now = datetime.now(timezone.utc).isoformat()
+    supabase.table("messages").update({"read_at": now}).eq("match_id", match_id).neq("sender_id", uid).is_("read_at", "null").execute()
+    return {"ok": True}
 
 
 @router.post("/upload/image")

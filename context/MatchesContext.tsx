@@ -8,6 +8,7 @@ export type Message = {
   text: string;
   fromMe: boolean;
   sentAt: number;
+  readAt?: number | null;
 };
 
 export type MatchEntry = {

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -149,7 +149,10 @@ export default function ChatScreen() {
         text: m.content,
         fromMe: m.sender_id === profile.id,
         sentAt: new Date(m.sent_at).getTime(),
+        readAt: m.read_at ? new Date(m.read_at).getTime() : null,
       })));
+      // Mark received messages as read
+      api.patch(`/messages/${matchId}/read`, {}).catch(() => {});
     } catch {}
   }, [matchId, profile]);
 
@@ -159,7 +162,7 @@ export default function ChatScreen() {
     // Initial load
     loadMessages();
 
-    // Subscribe to new messages in real-time
+    // Subscribe to new messages and read receipt updates
     const channel = supabase
       .channel(`chat:${matchId}`)
       .on(
@@ -168,15 +171,32 @@ export default function ChatScreen() {
         (payload) => {
           const m = payload.new as any;
           setMessages(prev => {
-            // Skip if we already have it (optimistic update)
             if (prev.some(msg => msg.id === m.id)) return prev;
+            // Mark as read if this is an incoming message
+            if (m.sender_id !== profile.id) {
+              api.patch(`/messages/${matchId}/read`, {}).catch(() => {});
+            }
             return [...prev, {
               id: m.id,
               text: m.content,
               fromMe: m.sender_id === profile.id,
               sentAt: new Date(m.sent_at).getTime(),
+              readAt: m.read_at ? new Date(m.read_at).getTime() : null,
             }];
           });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const m = payload.new as any;
+          // Update read status on our sent messages
+          if (m.sender_id === profile.id && m.read_at) {
+            setMessages(prev => prev.map(msg =>
+              msg.id === m.id ? { ...msg, readAt: new Date(m.read_at).getTime() } : msg
+            ));
+          }
         }
       )
       .subscribe();
@@ -259,6 +279,14 @@ export default function ChatScreen() {
     }
   }, [matchId]);
 
+  // ID of the last sent message that has been read — shows "Seen" indicator
+  const lastReadSentId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].fromMe && messages[i].readAt) return messages[i].id;
+    }
+    return null;
+  }, [messages]);
+
   const listItems = buildListItems(messages);
 
   const renderItem = ({ item, index }: { item: ListItem; index: number }) => {
@@ -303,6 +331,9 @@ export default function ChatScreen() {
           <Text style={[styles.bubbleTime, msg.fromMe && { textAlign: 'right' }]}>
             {formatTime(msg.sentAt)}
           </Text>
+          {msg.id === lastReadSentId && (
+            <Text style={styles.seenText}>Seen</Text>
+          )}
         </View>
       </View>
     );
@@ -421,6 +452,7 @@ const styles = StyleSheet.create({
   bubbleText: { fontSize: 14, lineHeight: 20, color: Colors.muted },
   bubbleTextMe: { color: '#fff' },
   bubbleTime: { fontSize: 10, color: Colors.muted, marginTop: 3, paddingHorizontal: 4 },
+  seenText: { fontSize: 10, color: Colors.green, textAlign: 'right', paddingHorizontal: 4, marginTop: 1 },
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingHorizontal: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: Colors.border, backgroundColor: Colors.bg },
   iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.border },
   input: { flex: 1, backgroundColor: Colors.surface, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: Colors.text, maxHeight: 120, borderWidth: 1, borderColor: Colors.border },
