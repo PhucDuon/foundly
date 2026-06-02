@@ -27,17 +27,18 @@ type InterestedUser = {
 export default function IdeaInterestsScreen() {
   const { id: ideaId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { matches } = useMatches();
+  const { matches, fetchMatches } = useMatches();
   const [users, setUsers] = useState<InterestedUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
+      fetchMatches(); // refresh so match IDs are up to date
       api.get<InterestedUser[]>(`/ideas/${ideaId}/interests`)
         .then(setUsers)
         .catch(() => {})
         .finally(() => setLoading(false));
-    }, [ideaId])
+    }, [ideaId, fetchMatches])
   );
 
   const getMatchId = (userId: string) =>
