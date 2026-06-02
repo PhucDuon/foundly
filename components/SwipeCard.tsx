@@ -77,12 +77,18 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => isTopRef.current && !disabledRef.current,
+      onStartShouldSetPanResponder: () => isTopRef.current,
       onMoveShouldSetPanResponder: () => isTopRef.current && !disabledRef.current,
       onPanResponderMove: (_, gesture) => {
+        if (disabledRef.current) return;
         position.setValue({ x: gesture.dx, y: gesture.dy * 0.35 });
       },
       onPanResponderRelease: (_, gesture) => {
+        // Any interaction on a disabled card → show limit modal
+        if (disabledRef.current) {
+          onPressRef.current?.();
+          return;
+        }
         const isTap = Math.abs(gesture.dx) < 5 && Math.abs(gesture.dy) < 5;
         if (isTap) {
           onPressRef.current?.();
