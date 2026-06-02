@@ -133,11 +133,14 @@ export default function DiscoverScreen() {
   const handleSwipeLeft = useCallback(async (card: CardData) => {
     setDeck(prev => prev.filter(c => c.id !== card.id));
     if (mode === 'founders') {
+      setSwipesToday(prev => prev + 1); // optimistic
       try {
         const res = await api.post<any>('/matches/swipe', { swiped_id: card.id, direction: 'left' });
         if (res.limit_reached) { setSwipesToday(res.swipes_today ?? 10); setShowLimitModal(true); return; }
         if (res.swipes_today !== undefined) setSwipesToday(res.swipes_today);
-      } catch {}
+      } catch {
+        setSwipesToday(prev => Math.max(0, prev - 1)); // revert on error
+      }
     }
   }, [mode]);
 
@@ -146,6 +149,7 @@ export default function DiscoverScreen() {
     setDeck(prev => prev.filter(c => c.id !== card.id));
 
     if (mode === 'founders') {
+      setSwipesToday(prev => prev + 1); // optimistic
       try {
         const res = await api.post<any>('/matches/swipe', { swiped_id: card.id, direction: 'right' });
         if (res.limit_reached) {
