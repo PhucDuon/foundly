@@ -28,14 +28,8 @@ async def discover_ideas(current_user=Depends(get_current_user), limit: int = 20
 @router.get("/mine")
 async def my_ideas(current_user=Depends(get_current_user)):
     uid = str(current_user.id)
-    ideas = supabase.table("startup_ideas").select("*").eq("founder_id", uid).order("created_at", desc=True).execute()
-
-    # Add interest count per idea
-    result = []
-    for idea in ideas.data:
-        interests = supabase.table("idea_interests").select("id").eq("idea_id", idea["id"]).execute()
-        result.append({**idea, "interest_count": len(interests.data)})
-    return result
+    result = supabase.rpc("get_my_ideas_with_counts", {"p_user_id": uid}).execute()
+    return result.data or []
 
 
 @router.post("")
