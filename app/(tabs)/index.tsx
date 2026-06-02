@@ -37,6 +37,9 @@ export default function DiscoverScreen() {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [swipesToday, setSwipesToday] = useState(0);
+  const swipesTodayRef = useRef(0);
+  // Keep ref in sync so limit check is always current even mid-gesture
+  useEffect(() => { swipesTodayRef.current = swipesToday; }, [swipesToday]);
   const topCardRef = useRef<SwipeCardHandle>(null);
   const pendingSuperLike = useRef(false);
 
@@ -134,7 +137,8 @@ export default function DiscoverScreen() {
   const handleSwipeLeft = useCallback(async (card: CardData) => {
     setDeck(prev => prev.filter(c => c.id !== card.id));
     if (mode === 'founders') {
-      setSwipesToday(prev => prev + 1); // optimistic
+      swipesTodayRef.current += 1; // immediate ref update blocks next swipe synchronously
+      setSwipesToday(swipesTodayRef.current);
       try {
         const res = await api.post<any>('/matches/swipe', { swiped_id: card.id, direction: 'left' });
         if (res.limit_reached) { setSwipesToday(res.swipes_today ?? 10); setShowLimitModal(true); return; }
@@ -150,7 +154,8 @@ export default function DiscoverScreen() {
     setDeck(prev => prev.filter(c => c.id !== card.id));
 
     if (mode === 'founders') {
-      setSwipesToday(prev => prev + 1); // optimistic
+      swipesTodayRef.current += 1;
+      setSwipesToday(swipesTodayRef.current);
       try {
         const res = await api.post<any>('/matches/swipe', { swiped_id: card.id, direction: 'right' });
         if (res.limit_reached) {
@@ -185,7 +190,7 @@ export default function DiscoverScreen() {
     }
   }, [mode, addMatch]);
 
-  const isSwipeLimited = mode === 'founders' && swipesToday >= 10;
+  const isSwipeLimited = mode === 'founders' && swipesTodayRef.current >= 10;
 
   const handleButtonSwipe = (dir: 'left' | 'right') => {
     if (deck.length === 0) return;

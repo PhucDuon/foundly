@@ -64,15 +64,8 @@ async def discover(current_user=Depends(get_current_user), limit: int = 20):
     my_resp = supabase.table("profiles").select("*").eq("id", uid).single().execute()
     my_profile = my_resp.data or {}
 
-    swiped = supabase.table("swipes").select("swiped_id").eq("swiper_id", uid).execute()
-    blocked_out = supabase.table("blocks").select("blocked_id").eq("blocker_id", uid).execute()
-    blocked_in  = supabase.table("blocks").select("blocker_id").eq("blocked_id", uid).execute()
-    exclude = (
-        {s["swiped_id"] for s in swiped.data}
-        | {b["blocked_id"] for b in blocked_out.data}
-        | {b["blocker_id"] for b in blocked_in.data}
-        | {uid}
-    )
+    excluded = supabase.rpc("get_excluded_user_ids", {"p_user_id": uid}).execute()
+    exclude = set(excluded.data or [])
 
     all_profiles = supabase.table("profiles").select("*").execute()
 

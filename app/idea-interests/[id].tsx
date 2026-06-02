@@ -90,26 +90,13 @@ export default function IdeaInterestsScreen() {
                     </View>
                   )}
                 </View>
-                {matchId ? (
+                {matchId && (
                   <TouchableOpacity
                     style={styles.chatBtn}
                     onPress={() => router.push(`/chat/${matchId}` as any)}
                     activeOpacity={0.8}
                   >
                     <Text style={styles.chatBtnText}>💬</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.acceptBtn}
-                    onPress={async () => {
-                      try {
-                        const res = await api.post<any>(`/ideas/${ideaId}/accept/${item.id}`, {});
-                        if (res.match?.id) router.push(`/chat/${res.match.id}` as any);
-                      } catch {}
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.acceptBtnText}>Connect</Text>
                   </TouchableOpacity>
                 )}
               </View>
