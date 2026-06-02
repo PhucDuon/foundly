@@ -80,9 +80,13 @@ async def get_idea_interests(idea_id: str, current_user=Depends(get_current_user
     if not interests.data:
         return []
 
-    user_ids = [i["user_id"] for i in interests.data]
-    profiles = supabase.table("profiles").select("*").execute()
-    return [p for p in profiles.data if p["id"] in user_ids]
+    # Fetch each profile individually — avoids supabase-py batch filter issues
+    result = []
+    for row in interests.data:
+        profile = supabase.table("profiles").select("*").eq("id", row["user_id"]).single().execute()
+        if profile.data:
+            result.append(profile.data)
+    return result
 
 
 @router.post("/{idea_id}/interest")
