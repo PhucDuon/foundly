@@ -50,6 +50,13 @@ async def save_push_token(body: dict, current_user=Depends(get_current_user)):
     return {"ok": True}
 
 
+@router.get("/swipes-today")
+async def get_swipes_today(current_user=Depends(get_current_user)):
+    uid = str(current_user.id)
+    result = supabase.rpc("get_today_swipe_count", {"p_user_id": uid}).execute()
+    return {"count": result.data or 0}
+
+
 @router.get("/discover")
 async def discover(current_user=Depends(get_current_user), limit: int = 20):
     uid = str(current_user.id)

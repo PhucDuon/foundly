@@ -104,6 +104,15 @@ export default function DiscoverScreen() {
     }
   }, []);
 
+  // Fetch today's swipe count on mount
+  useEffect(() => {
+    if (profile) {
+      api.get<{ count: number }>('/users/swipes-today')
+        .then(d => setSwipesToday(d.count))
+        .catch(() => {});
+    }
+  }, [profile]);
+
   // Initial load when mode/profile changes
   useEffect(() => {
     if (mode === 'founders' && profile) loadFounders();
@@ -192,8 +201,8 @@ export default function DiscoverScreen() {
           <Text style={styles.logo}>
             Found<Text style={{ color: Colors.accent }}>ly</Text>
           </Text>
-          {mode === 'founders' && swipesToday > 0 && (
-            <Text style={styles.swipesLeft}>{10 - swipesToday} swipes left today</Text>
+          {mode === 'founders' && (
+            <Text style={styles.swipesLeft}>{Math.max(0, 10 - swipesToday)} swipes left today</Text>
           )}
         </View>
         <View style={styles.modeTabs}>
