@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { api } from '../services/api';
 
@@ -23,11 +23,28 @@ function SectionLabel({ children }: { children: string }) {
 
 export default function CreateIdeaScreen() {
   const router = useRouter();
+  const { ideaId, ideaData } = useLocalSearchParams<{ ideaId?: string; ideaData?: string }>();
+  const isEditing = !!ideaId;
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [stage, setStage] = useState('Idea');
   const [lookingFor, setLookingFor] = useState<string[]>([]);
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (ideaData) {
+      try {
+        const idea = JSON.parse(ideaData);
+        setName(idea.name ?? '');
+        setDescription(idea.description ?? '');
+        setCategory(idea.category ?? '');
+        setStage(idea.stage ?? 'Idea');
+        setLookingFor(idea.looking_for ?? []);
+      } catch {}
+    }
+  }, [ideaData]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,16 +60,15 @@ export default function CreateIdeaScreen() {
     setLoading(true);
     setError('');
     try {
-      await api.post('/ideas', {
-        name: name.trim(),
-        description: description.trim(),
-        category,
-        stage,
-        looking_for: lookingFor,
-      });
+      const body = { name: name.trim(), description: description.trim(), category, stage, looking_for: lookingFor };
+      if (isEditing) {
+        await api.put(`/ideas/${ideaId}`, body);
+      } else {
+        await api.post('/ideas', body);
+      }
       router.back();
     } catch (e) {
-      setError((e as Error).message || 'Failed to post idea.');
+      setError((e as Error).message || 'Failed to save idea.');
       setLoading(false);
     }
   };
@@ -64,9 +80,9 @@ export default function CreateIdeaScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <Text style={styles.backArrow}>‹</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Post a Startup Idea</Text>
+        <Text style={styles.headerTitle}>{isEditing ? 'Edit Idea' : 'Post a Startup Idea'}</Text>
         <TouchableOpacity onPress={handlePost} style={[styles.postBtn, loading && { opacity: 0.6 }]} disabled={loading} activeOpacity={0.8}>
-          {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.postBtnText}>Post</Text>}
+          {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.postBtnText}>{isEditing ? 'Save' : 'Post'}</Text>}
         </TouchableOpacity>
       </View>
 

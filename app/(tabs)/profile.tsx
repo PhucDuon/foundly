@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar } from '../../components/Avatar';
+import { api } from '../../services/api';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -32,6 +34,13 @@ const sectionStyles = StyleSheet.create({
 export default function ProfileScreen() {
   const router = useRouter();
   const { profile, logout } = useAuth();
+  const [ideasCount, setIdeasCount] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      api.get<any[]>('/ideas/mine').then(data => setIdeasCount(data.length)).catch(() => {});
+    }, [])
+  );
 
   if (!profile) return null;
 
@@ -94,16 +103,20 @@ export default function ProfileScreen() {
           </Section>
         )}
 
-        {/* Post a Startup Idea */}
+        {/* My Ideas / Post Idea */}
         <TouchableOpacity
           style={styles.postIdeaBtn}
-          onPress={() => router.push('/create-idea' as any)}
+          onPress={() => router.push(ideasCount > 0 ? '/my-ideas' : '/create-idea' as any)}
           activeOpacity={0.85}
         >
           <Text style={styles.postIdeaIcon}>🚀</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.postIdeaTitle}>Post a Startup Idea</Text>
-            <Text style={styles.postIdeaSub}>Let founders find and join your vision</Text>
+            <Text style={styles.postIdeaTitle}>
+              {ideasCount > 0 ? `My Ideas (${ideasCount})` : 'Post a Startup Idea'}
+            </Text>
+            <Text style={styles.postIdeaSub}>
+              {ideasCount > 0 ? 'Manage your posted ideas' : 'Let founders find and join your vision'}
+            </Text>
           </View>
           <Text style={styles.postIdeaArrow}>›</Text>
         </TouchableOpacity>

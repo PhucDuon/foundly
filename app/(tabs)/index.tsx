@@ -87,14 +87,15 @@ export default function DiscoverScreen() {
     try {
       const ideas = await api.get<any[]>('/ideas');
       setDeck(
-        ideas.map(i => ({
+        ideas.map((i: any) => ({
           id: i.id,
           name: i.name,
           emoji: i.founder?.emoji ?? '🚀',
           role: `${i.category} · ${i.stage}`,
-          bio: i.description,
+          bio: `${i.description}\n\nBy ${i.founder?.name ?? 'Unknown'}`,
           skills: i.looking_for ?? [],
           match: false,
+          avatarUrl: i.founder?.avatar_url ?? null,
         }))
       );
     } catch {
