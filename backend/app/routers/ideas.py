@@ -70,17 +70,8 @@ async def get_idea_interests(idea_id: str, current_user=Depends(get_current_user
     if not idea.data or idea.data["founder_id"] != uid:
         raise HTTPException(status_code=403, detail="Not your idea.")
 
-    interests = supabase.table("idea_interests").select("user_id").eq("idea_id", idea_id).execute()
-    if not interests.data:
-        return []
-
-    # Fetch each profile individually — avoids supabase-py batch filter issues
-    result = []
-    for row in interests.data:
-        profile = supabase.table("profiles").select("*").eq("id", row["user_id"]).single().execute()
-        if profile.data:
-            result.append(profile.data)
-    return result
+    result = supabase.rpc("get_idea_interested_profiles", {"p_idea_id": idea_id}).execute()
+    return result.data or []
 
 
 @router.post("/{idea_id}/interest")
