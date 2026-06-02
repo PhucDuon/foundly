@@ -15,6 +15,7 @@ import { SwipeCard, SwipeCardHandle } from '../../components/SwipeCard';
 import { MatchModal } from '../../components/MatchModal';
 import { ProfileDetailModal } from '../../components/ProfileDetailModal';
 import { FilterModal, FilterState, EMPTY_FILTERS } from '../../components/FilterModal';
+import { SwipeLimitModal } from '../../components/SwipeLimitModal';
 import { useMatches } from '../../context/MatchesContext';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -34,6 +35,8 @@ export default function DiscoverScreen() {
   const [showSearch, setShowSearch] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [swipesToday, setSwipesToday] = useState(0);
   const topCardRef = useRef<SwipeCardHandle>(null);
   const pendingSuperLike = useRef(false);
 
@@ -121,7 +124,11 @@ export default function DiscoverScreen() {
   const handleSwipeLeft = useCallback(async (card: CardData) => {
     setDeck(prev => prev.filter(c => c.id !== card.id));
     if (mode === 'founders') {
-      try { await api.post('/matches/swipe', { swiped_id: card.id, direction: 'left' }); } catch {}
+      try {
+        const res = await api.post<any>('/matches/swipe', { swiped_id: card.id, direction: 'left' });
+        if (res.limit_reached) { setSwipesToday(res.swipes_today ?? 10); setShowLimitModal(true); return; }
+        if (res.swipes_today !== undefined) setSwipesToday(res.swipes_today);
+      } catch {}
     }
   }, [mode]);
 
@@ -132,6 +139,12 @@ export default function DiscoverScreen() {
     if (mode === 'founders') {
       try {
         const res = await api.post<any>('/matches/swipe', { swiped_id: card.id, direction: 'right' });
+        if (res.limit_reached) {
+          setSwipesToday(res.swipes_today ?? 10);
+          setShowLimitModal(true);
+          return;
+        }
+        if (res.swipes_today !== undefined) setSwipesToday(res.swipes_today);
         if (res.matched && res.match) {
           addMatch({ matchId: res.match.id, userId: card.id, name: card.name, emoji: card.emoji, role: card.role, bio: card.bio });
           setPendingMatchId(res.match.id);
@@ -175,9 +188,14 @@ export default function DiscoverScreen() {
     <SafeAreaView style={styles.container}>
       {/* Navbar */}
       <View style={styles.navbar}>
-        <Text style={styles.logo}>
-          Found<Text style={{ color: Colors.accent }}>ly</Text>
-        </Text>
+        <View>
+          <Text style={styles.logo}>
+            Found<Text style={{ color: Colors.accent }}>ly</Text>
+          </Text>
+          {mode === 'founders' && swipesToday > 0 && (
+            <Text style={styles.swipesLeft}>{10 - swipesToday} swipes left today</Text>
+          )}
+        </View>
         <View style={styles.modeTabs}>
           {(['founders', 'ideas'] as const).map(m => (
             <TouchableOpacity
@@ -296,6 +314,12 @@ export default function DiscoverScreen() {
         onApply={setFilters}
         onClose={() => setShowFilter(false)}
       />
+
+      <SwipeLimitModal
+        visible={showLimitModal}
+        swipesToday={swipesToday}
+        onClose={() => setShowLimitModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -304,6 +328,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
   logo: { fontWeight: '800', fontSize: 22, color: Colors.text },
+  swipesLeft: { fontSize: 11, color: Colors.muted, marginTop: 1 },
   modeTabs: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 24, padding: 4, gap: 4 },
   modeTab: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
   modeTabActive: { backgroundColor: Colors.accent },
