@@ -184,13 +184,17 @@ export default function DiscoverScreen() {
     }
   }, [mode, addMatch]);
 
+  const isSwipeLimited = mode === 'founders' && swipesToday >= 10;
+
   const handleButtonSwipe = (dir: 'left' | 'right') => {
     if (deck.length === 0) return;
+    if (isSwipeLimited) { setShowLimitModal(true); return; }
     topCardRef.current?.swipe(dir);
   };
 
   const handleSuperLike = () => {
     if (deck.length === 0) return;
+    if (isSwipeLimited) { setShowLimitModal(true); return; }
     pendingSuperLike.current = true;
     topCardRef.current?.swipe('right');
   };
@@ -284,7 +288,8 @@ export default function DiscoverScreen() {
                 stackIndex={stackIndex}
                 onSwipeLeft={() => handleSwipeLeft(card)}
                 onSwipeRight={() => handleSwipeRight(card)}
-                onPress={isTop ? () => setDetailCard(card) : undefined}
+                onPress={isTop ? (isSwipeLimited ? () => setShowLimitModal(true) : () => setDetailCard(card)) : undefined}
+                disabled={isSwipeLimited}
               />
             );
           })

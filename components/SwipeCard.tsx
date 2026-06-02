@@ -22,6 +22,7 @@ type Props = {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onPress?: () => void;
+  disabled?: boolean;
 };
 
 export type SwipeCardHandle = {
@@ -29,7 +30,7 @@ export type SwipeCardHandle = {
 };
 
 export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
-  { card, isTop, stackIndex, onSwipeLeft, onSwipeRight, onPress },
+  { card, isTop, stackIndex, onSwipeLeft, onSwipeRight, onPress, disabled },
   ref
 ) {
   const position = useRef(new Animated.ValueXY()).current;
@@ -42,6 +43,8 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
   onSwipeRightRef.current = onSwipeRight;
   const onPressRef = useRef(onPress);
   onPressRef.current = onPress;
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
 
   useImperativeHandle(ref, () => ({
     swipe(dir) {
@@ -74,8 +77,8 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => isTopRef.current,
-      onMoveShouldSetPanResponder: () => isTopRef.current,
+      onStartShouldSetPanResponder: () => isTopRef.current && !disabledRef.current,
+      onMoveShouldSetPanResponder: () => isTopRef.current && !disabledRef.current,
       onPanResponderMove: (_, gesture) => {
         position.setValue({ x: gesture.dx, y: gesture.dy * 0.35 });
       },
