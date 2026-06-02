@@ -77,6 +77,18 @@ async def get_idea_interests(idea_id: str, current_user=Depends(get_current_user
     return result.data or []
 
 
+@router.post("/{idea_id}/accept/{user_id}")
+async def accept_interest(idea_id: str, user_id: str, current_user=Depends(get_current_user)):
+    uid = str(current_user.id)
+    idea = supabase.table("startup_ideas").select("founder_id").eq("id", idea_id).single().execute()
+    if not idea.data or idea.data["founder_id"] != uid:
+        raise HTTPException(status_code=403, detail="Not your idea.")
+    match_id = supabase.rpc("create_idea_match", {
+        "p_user_id": user_id, "p_founder_id": uid,
+    }).execute().data
+    return {"match": {"id": match_id}}
+
+
 @router.post("/{idea_id}/interest")
 async def express_interest(idea_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)

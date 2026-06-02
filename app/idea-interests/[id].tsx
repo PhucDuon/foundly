@@ -103,7 +103,7 @@ export default function IdeaInterestsScreen() {
                     style={styles.acceptBtn}
                     onPress={async () => {
                       try {
-                        const res = await api.post<any>(`/ideas/${ideaId}/interest`, {});
+                        const res = await api.post<any>(`/ideas/${ideaId}/accept/${item.id}`, {});
                         if (res.match?.id) router.push(`/chat/${res.match.id}` as any);
                       } catch {}
                     }}
