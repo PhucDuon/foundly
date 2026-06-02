@@ -163,9 +163,9 @@ export default function ChatScreen() {
     // Initial load
     loadMessages();
 
-    // Subscribe to new messages and read receipt updates
+    // Unique name per mount prevents "already subscribed" error on re-renders
     const channel = supabase
-      .channel(`chat:${matchId}`)
+      .channel(`chat:${matchId}:${Date.now()}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
