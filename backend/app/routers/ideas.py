@@ -102,19 +102,13 @@ async def express_interest(idea_id: str, current_user=Depends(get_current_user))
     except Exception:
         pass
 
-    m1 = supabase.table("matches").select("id").eq("user1_id", uid).eq("user2_id", founder_id).execute()
-    m2 = supabase.table("matches").select("id").eq("user1_id", founder_id).eq("user2_id", uid).execute()
-
-    if m1.data:
-        match_id = m1.data[0]["id"]
-        is_new = False
-    elif m2.data:
-        match_id = m2.data[0]["id"]
-        is_new = False
-    else:
-        match = supabase.table("matches").insert({"user1_id": uid, "user2_id": founder_id}).execute()
-        match_id = match.data[0]["id"]
-        is_new = True
+    prev_count = supabase.table("matches").select("id").or_(
+        f"and(user1_id.eq.{uid},user2_id.eq.{founder_id}),and(user1_id.eq.{founder_id},user2_id.eq.{uid})"
+    ).execute()
+    is_new = not bool(prev_count.data)
+    match_id = supabase.rpc("create_idea_match", {
+        "p_user_id": uid, "p_founder_id": founder_id
+    }).execute().data
 
     if is_new:
         me = supabase.table("profiles").select("name").eq("id", uid).single().execute()

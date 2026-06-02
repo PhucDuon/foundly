@@ -90,13 +90,26 @@ export default function IdeaInterestsScreen() {
                     </View>
                   )}
                 </View>
-                {matchId && (
+                {matchId ? (
                   <TouchableOpacity
                     style={styles.chatBtn}
                     onPress={() => router.push(`/chat/${matchId}` as any)}
                     activeOpacity={0.8}
                   >
                     <Text style={styles.chatBtnText}>💬</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.acceptBtn}
+                    onPress={async () => {
+                      try {
+                        const res = await api.post<any>(`/ideas/${ideaId}/interest`, {});
+                        if (res.match?.id) router.push(`/chat/${res.match.id}` as any);
+                      } catch {}
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.acceptBtnText}>Connect</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -129,4 +142,6 @@ const styles = StyleSheet.create({
   skillText: { fontSize: 10, color: Colors.muted },
   chatBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
   chatBtnText: { fontSize: 18 },
+  acceptBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: Colors.green, alignItems: 'center', justifyContent: 'center' },
+  acceptBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 });
