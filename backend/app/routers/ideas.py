@@ -70,7 +70,10 @@ async def get_idea_interests(idea_id: str, current_user=Depends(get_current_user
     if not idea.data or idea.data["founder_id"] != uid:
         raise HTTPException(status_code=403, detail="Not your idea.")
 
-    result = supabase.rpc("get_idea_interested_profiles", {"p_idea_id": idea_id}).execute()
+    result = supabase.rpc("get_idea_interested_profiles", {
+        "p_idea_id": idea_id,
+        "p_founder_id": uid,
+    }).execute()
     return result.data or []
 
 

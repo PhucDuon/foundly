@@ -22,12 +22,13 @@ type InterestedUser = {
   bio: string;
   avatar_url: string | null;
   skills: string[];
+  match_id: string | null;
 };
 
 export default function IdeaInterestsScreen() {
   const { id: ideaId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { matches, fetchMatches } = useMatches();
+  const { fetchMatches } = useMatches();
   const [users, setUsers] = useState<InterestedUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,9 +41,6 @@ export default function IdeaInterestsScreen() {
         .finally(() => setLoading(false));
     }, [ideaId, fetchMatches])
   );
-
-  const getMatchId = (userId: string) =>
-    matches.find(m => m.userId === userId)?.matchId;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,7 +67,7 @@ export default function IdeaInterestsScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
-            const matchId = getMatchId(item.id);
+            const matchId = item.match_id;
             return (
               <View style={styles.card}>
                 <Avatar avatarUrl={item.avatar_url} emoji={item.emoji} size={56} />
