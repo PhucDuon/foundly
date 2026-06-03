@@ -121,6 +121,22 @@ export default function ProfileScreen() {
           <Text style={styles.postIdeaArrow}>›</Text>
         </TouchableOpacity>
 
+        {/* Upgrade to Pro banner */}
+        <TouchableOpacity
+          style={styles.proBanner}
+          onPress={() => router.push('/paywall' as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.proBannerLeft}>
+            <Text style={styles.proBannerIcon}>👑</Text>
+            <View>
+              <Text style={styles.proBannerTitle}>Upgrade to Pro</Text>
+              <Text style={styles.proBannerSub}>Unlimited swipes · See who liked you</Text>
+            </View>
+          </View>
+          <Text style={styles.proBannerArrow}>›</Text>
+        </TouchableOpacity>
+
         {!profile.bio && profile.skills.length === 0 && (
           <TouchableOpacity
             style={styles.emptyPrompt}
@@ -194,4 +210,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyPromptText: { color: Colors.muted, fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  proBanner: {
+    marginHorizontal: 20, marginBottom: 20,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: 'rgba(108,99,255,0.12)',
+    borderRadius: 20, padding: 18,
+    borderWidth: 1, borderColor: 'rgba(108,99,255,0.35)',
+  },
+  proBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  proBannerIcon: { fontSize: 26 },
+  proBannerTitle: { fontWeight: '700', fontSize: 15, color: Colors.accent, marginBottom: 2 },
+  proBannerSub: { fontSize: 12, color: Colors.muted },
+  proBannerArrow: { fontSize: 22, color: Colors.accent },
 });

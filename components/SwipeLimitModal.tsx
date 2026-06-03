@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
 
 const DAILY_LIMIT = 10;
@@ -24,6 +25,7 @@ function hoursUntilReset(): number {
 }
 
 export function SwipeLimitModal({ visible, swipesToday, onClose }: Props) {
+  const router = useRouter();
   const hours = hoursUntilReset();
 
   return (
@@ -54,10 +56,13 @@ export function SwipeLimitModal({ visible, swipesToday, onClose }: Props) {
             </View>
           </View>
 
-          {/* Placeholder for future premium upsell */}
-          <TouchableOpacity style={styles.btnPremium} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.btnPremium}
+            activeOpacity={0.85}
+            onPress={() => { onClose(); router.push('/paywall' as any); }}
+          >
             <Text style={styles.btnPremiumText}>⚡ Get Unlimited Swipes</Text>
-            <Text style={styles.btnPremiumSub}>Upgrade to Premium — coming soon</Text>
+            <Text style={styles.btnPremiumSub}>Upgrade to Pro — See plans</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.btnClose} onPress={onClose} activeOpacity={0.7}>
