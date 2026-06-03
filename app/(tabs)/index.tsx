@@ -98,12 +98,12 @@ export default function DiscoverScreen() {
         ideas.map((i: any) => ({
           id: i.id,
           name: i.name,
-          emoji: i.founder?.emoji ?? '🚀',
+          emoji: i.category?.split(' ')[0] ?? '💡',   // use category emoji as card bg
           role: `${i.category} · ${i.stage}`,
           bio: `${i.description}\n\nBy ${i.founder?.name ?? 'Unknown'}`,
           skills: i.looking_for ?? [],
           match: false,
-          avatarUrl: i.founder?.avatar_url ?? null,
+          avatarUrl: null,                             // don't use founder photo as full-bleed bg
           interestCount: i.interest_count ?? 0,
         }))
       );
