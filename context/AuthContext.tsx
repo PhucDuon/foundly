@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-import { api, setAuthToken } from '../services/api';
+import { api, setAuthToken, setOnUnauthorized } from '../services/api';
 import { supabase, setRealtimeSession } from '../services/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -152,6 +152,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
     await AsyncStorage.multiRemove([TOKEN_KEY, PROFILE_KEY]);
   }, []);
+
+  // Auto-logout on any 401 (expired token) from any API call
+  useEffect(() => {
+    setOnUnauthorized(logout);
+  }, [logout]);
 
   const loginWithGoogle = useCallback(async () => {
     const redirectUri = Linking.createURL('auth');

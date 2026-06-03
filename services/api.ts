@@ -9,6 +9,7 @@ setInterval(() => {
 }, 9 * 60 * 1000);
 
 let _token: string | null = null;
+let _onUnauthorized: (() => void) | null = null;
 
 export function setAuthToken(token: string | null) {
   _token = token;
@@ -16,6 +17,10 @@ export function setAuthToken(token: string | null) {
 
 export function getAuthToken(): string | null {
   return _token;
+}
+
+export function setOnUnauthorized(cb: () => void) {
+  _onUnauthorized = cb;
 }
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -36,6 +41,11 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
     });
 
     const data = await res.json().catch(() => ({ detail: 'No response body' }));
+
+    if (res.status === 401) {
+      _onUnauthorized?.();
+      throw new Error(data.detail ?? 'Not authenticated');
+    }
 
     if (!res.ok) {
       throw new Error(data.detail ?? `Request failed with status ${res.status}`);
