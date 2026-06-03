@@ -15,13 +15,16 @@ async def discover_ideas(
     limit: int = 20,
 ):
     uid = str(current_user.id)
-    result = supabase.rpc("get_discover_ideas", {
-        "p_user_id":  uid,
-        "p_category": category or None,
-        "p_sort":     sort,
-        "p_limit":    limit,
-    }).execute()
-    rows = result.data or []
+    try:
+        result = supabase.rpc("get_discover_ideas", {
+            "p_user_id":  uid,
+            "p_category": category or None,
+            "p_sort":     sort,
+            "p_limit":    limit,
+        }).execute()
+        rows = result.data or []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"get_discover_ideas RPC failed: {e}")
     # Re-shape to match what the frontend expects
     return [
         {
