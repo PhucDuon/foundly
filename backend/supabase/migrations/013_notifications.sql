@@ -13,6 +13,7 @@ returns table (
 security definer
 language sql
 as $$
+  select * from (
   -- New matches
   select
     m.id,
@@ -63,6 +64,7 @@ as $$
     and msg.read_at is null
     and (mt.user1_id = p_user_id or mt.user2_id = p_user_id)
 
+  ) sub
   order by created_at desc
   limit 60;
 $$;
