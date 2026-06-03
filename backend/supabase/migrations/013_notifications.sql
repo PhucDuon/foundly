@@ -22,7 +22,7 @@ as $$
     p.avatar_url,
     'You matched with ' || p.name,
     m.id,
-    m.matched_at
+    m.matched_at as created_at
   from public.matches m
   join public.profiles p on p.id = case
     when m.user1_id = p_user_id then m.user2_id
@@ -40,7 +40,7 @@ as $$
     p.avatar_url,
     p.name || ' is interested in "' || si.name || '"',
     null::uuid,
-    ii.created_at
+    ii.created_at as created_at
   from public.idea_interests ii
   join public.startup_ideas si on si.id = ii.idea_id
   join public.profiles p on p.id = ii.user_id
@@ -56,7 +56,7 @@ as $$
     p.avatar_url,
     p.name || ': ' || left(msg.content, 80),
     msg.match_id,
-    msg.sent_at
+    msg.sent_at as created_at
   from public.messages msg
   join public.profiles p on p.id = msg.sender_id
   join public.matches mt on mt.id = msg.match_id
