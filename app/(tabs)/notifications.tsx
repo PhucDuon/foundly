@@ -90,7 +90,6 @@ export default function NotificationsScreen() {
           Found<Text style={{ color: Colors.accent }}>ly</Text>
         </Text>
         <Text style={styles.navTitle}>Activity</Text>
-        <View style={{ width: 60 }} />
       </View>
 
       {loading ? (
@@ -149,8 +148,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 12,
   },
-  logo: { fontWeight: '800', fontSize: 22, color: Colors.text, width: 80 },
-  navTitle: { fontWeight: '800', fontSize: 18, color: Colors.text },
+  logo: { fontWeight: '800', fontSize: 22, color: Colors.text },
+  navTitle: { fontWeight: '700', fontSize: 16, color: Colors.muted },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyEmoji: { fontSize: 52, marginBottom: 16 },
   emptyTitle: { fontWeight: '800', fontSize: 20, color: Colors.text, marginBottom: 8 },
