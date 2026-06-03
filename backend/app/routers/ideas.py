@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from app.database import supabase
 from app.dependencies import get_current_user
 from app.schemas.idea import IdeaCreate
@@ -8,21 +8,41 @@ router = APIRouter()
 
 
 @router.get("")
-async def discover_ideas(current_user=Depends(get_current_user), limit: int = 20):
+async def discover_ideas(
+    current_user=Depends(get_current_user),
+    category: str = Query(default=""),
+    sort: str = Query(default="newest"),
+    limit: int = 20,
+):
     uid = str(current_user.id)
-
-    interested = supabase.table("idea_interests").select("idea_id").eq("user_id", uid).execute()
-    exclude = {i["idea_id"] for i in interested.data}
-
-    ideas = (
-        supabase.table("startup_ideas")
-        .select("*, founder:profiles!founder_id(id, name, emoji, role, avatar_url, push_token)")
-        .neq("founder_id", uid)
-        .execute()
-    )
-
-    filtered = [i for i in ideas.data if i["id"] not in exclude]
-    return filtered[:limit]
+    result = supabase.rpc("get_discover_ideas", {
+        "p_user_id":  uid,
+        "p_category": category or None,
+        "p_sort":     sort,
+        "p_limit":    limit,
+    }).execute()
+    rows = result.data or []
+    # Re-shape to match what the frontend expects
+    return [
+        {
+            "id":          r["id"],
+            "name":        r["name"],
+            "description": r["description"],
+            "category":    r["category"],
+            "stage":       r["stage"],
+            "looking_for": r["looking_for"],
+            "created_at":  r["created_at"],
+            "interest_count": r["interest_count"],
+            "founder": {
+                "id":         r["founder_id"],
+                "name":       r["founder_name"],
+                "emoji":      r["founder_emoji"],
+                "role":       r["founder_role"],
+                "avatar_url": r["founder_avatar_url"],
+            },
+        }
+        for r in rows
+    ]
 
 
 @router.get("/mine")

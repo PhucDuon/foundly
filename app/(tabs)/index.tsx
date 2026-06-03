@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
@@ -36,6 +37,8 @@ export default function DiscoverScreen() {
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [ideasCategory, setIdeasCategory] = useState('');
+  const [ideasSort, setIdeasSort] = useState<'newest' | 'popular'>('newest');
   const [swipesToday, setSwipesToday] = useState(0);
   const swipesTodayRef = useRef(0);
   // Keep ref in sync so limit check is always current even mid-gesture
@@ -85,10 +88,12 @@ export default function DiscoverScreen() {
     }
   }, []);
 
-  const loadIdeas = useCallback(async () => {
+  const loadIdeas = useCallback(async (category = ideasCategory, sort = ideasSort) => {
     setLoading(true);
     try {
-      const ideas = await api.get<any[]>('/ideas');
+      const params = new URLSearchParams({ sort });
+      if (category) params.set('category', category);
+      const ideas = await api.get<any[]>(`/ideas?${params}`);
       setDeck(
         ideas.map((i: any) => ({
           id: i.id,
@@ -99,6 +104,7 @@ export default function DiscoverScreen() {
           skills: i.looking_for ?? [],
           match: false,
           avatarUrl: i.founder?.avatar_url ?? null,
+          interestCount: i.interest_count ?? 0,
         }))
       );
     } catch {
@@ -106,7 +112,7 @@ export default function DiscoverScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [ideasCategory, ideasSort]);
 
   // Fetch today's swipe count on mount
   useEffect(() => {
@@ -270,6 +276,40 @@ export default function DiscoverScreen() {
         </View>
       )}
 
+      {/* Ideas filters — category pills + sort toggle */}
+      {mode === 'ideas' && (
+        <View style={styles.ideasFilterBar}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryPills}>
+            {['', '🤖 AI', '💰 FinTech', '🏥 HealthTech', '🎓 EdTech', '☁️ SaaS', '🎮 Gaming', '🛒 E-commerce', '📱 Social Media', '🌱 GreenTech', '🔐 Cybersecurity'].map(cat => (
+              <TouchableOpacity
+                key={cat || 'all'}
+                style={[styles.categoryPill, ideasCategory === cat && styles.categoryPillActive]}
+                onPress={() => { setIdeasCategory(cat); loadIdeas(cat, ideasSort); }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.categoryPillText, ideasCategory === cat && styles.categoryPillTextActive]}>
+                  {cat || 'All'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <View style={styles.sortRow}>
+            {(['newest', 'popular'] as const).map(s => (
+              <TouchableOpacity
+                key={s}
+                style={[styles.sortBtn, ideasSort === s && styles.sortBtnActive]}
+                onPress={() => { setIdeasSort(s); loadIdeas(ideasCategory, s); }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.sortBtnText, ideasSort === s && styles.sortBtnTextActive]}>
+                  {s === 'newest' ? '🕐 Newest' : '🔥 Popular'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
       <View style={styles.swipeArea}>
         {loading ? (
           <ActivityIndicator size="large" color={Colors.accent} />
@@ -375,4 +415,15 @@ const styles = StyleSheet.create({
   btnSkip: { width: 56, height: 56, backgroundColor: Colors.surface, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
   btnLike: { width: 72, height: 72, backgroundColor: Colors.accent, shadowColor: Colors.accent, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.45, shadowRadius: 15, elevation: 8 },
   btnSuper: { width: 56, height: 56, backgroundColor: Colors.surface, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
+  ideasFilterBar: { paddingBottom: 6 },
+  categoryPills: { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
+  categoryPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  categoryPillActive: { backgroundColor: 'rgba(108,99,255,0.15)', borderColor: Colors.accent },
+  categoryPillText: { fontSize: 12, color: Colors.muted, fontWeight: '500' },
+  categoryPillTextActive: { color: Colors.accent, fontWeight: '700' },
+  sortRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8 },
+  sortBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
+  sortBtnActive: { backgroundColor: 'rgba(108,99,255,0.15)', borderColor: Colors.accent },
+  sortBtnText: { fontSize: 12, color: Colors.muted, fontWeight: '500' },
+  sortBtnTextActive: { color: Colors.accent, fontWeight: '700' },
 });

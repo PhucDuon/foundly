@@ -7,7 +7,8 @@ export type CardData = {
   bio: string;
   skills: string[];
   match: boolean;
-  compatibilityScore?: number; // 0-100, present on real API cards
+  compatibilityScore?: number;
+  interestCount?: number;
   avatarUrl?: string | null;
 };
 
