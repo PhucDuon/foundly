@@ -19,6 +19,7 @@ export type UserProfile = {
   interests: string[];
   emoji: string;
   avatarUrl: string | null;
+  isDiscoverable: boolean;
 };
 
 export type RegisterData = {
@@ -67,6 +68,7 @@ function mapProfile(raw: any): UserProfile {
     interests:       raw.interests ?? [],
     emoji:           raw.emoji ?? '🚀',
     avatarUrl:       raw.avatar_url ?? raw.avatarUrl ?? null,
+    isDiscoverable:  raw.is_discoverable ?? true,
   };
 }
 

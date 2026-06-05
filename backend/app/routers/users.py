@@ -71,7 +71,7 @@ async def discover(current_user=Depends(get_current_user), limit: int = 20):
 
     candidates = []
     for p in all_profiles.data:
-        if p["id"] not in exclude:
+        if p["id"] not in exclude and p.get("is_discoverable", True):
             score = compute_compatibility(my_profile, p)
             candidates.append({**p, "compatibility_score": score})
 

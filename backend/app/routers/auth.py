@@ -75,6 +75,17 @@ async def logout(current_user=Depends(get_current_user)):
     return {"message": "Logged out successfully."}
 
 
+@router.delete("/me")
+async def delete_account(current_user=Depends(get_current_user)):
+    uid = str(current_user.id)
+    supabase.table("profiles").delete().eq("id", uid).execute()
+    try:
+        supabase.auth.admin.delete_user(uid)
+    except Exception:
+        pass
+    return {"message": "Account deleted."}
+
+
 @router.get("/me")
 async def get_me(current_user=Depends(get_current_user)):
     uid = str(current_user.id)

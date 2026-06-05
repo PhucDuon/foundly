@@ -47,7 +47,7 @@ const sectionStyles = StyleSheet.create({
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, logout } = useAuth();
+  const { profile } = useAuth();
   const [ideasCount, setIdeasCount] = useState(0);
 
   useFocusEffect(
@@ -71,8 +71,8 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/edit-profile')} activeOpacity={0.7}>
             <Text style={{ fontSize: 18 }}>✏️</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={logout} activeOpacity={0.7}>
-            <Text style={{ fontSize: 18 }}>🚪</Text>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/settings' as any)} activeOpacity={0.7}>
+            <Text style={{ fontSize: 18 }}>⚙️</Text>
           </TouchableOpacity>
         </View>
       </View>
