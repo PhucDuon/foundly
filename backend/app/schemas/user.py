@@ -27,6 +27,7 @@ class UserProfileUpdate(BaseModel):
     experience_level: Optional[str] = None
     skills: Optional[list[str]] = None
     interests: Optional[list[str]] = None
+    is_discoverable: Optional[bool] = None
 
 
 class UserProfileResponse(BaseModel):

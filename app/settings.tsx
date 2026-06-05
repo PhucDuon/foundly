@@ -58,7 +58,7 @@ export default function SettingsScreen() {
     setDiscoverable(val);
     setSavingDiscover(true);
     try {
-      await updateProfile({ isDiscoverable: val } as any);
+      await updateProfile({ isDiscoverable: val });
     } catch {
       setDiscoverable(!val); // revert on error
     } finally {

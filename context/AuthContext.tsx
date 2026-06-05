@@ -193,6 +193,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body.avatar_url = body.avatarUrl;
       delete body.avatarUrl;
     }
+    if ('isDiscoverable' in body) {
+      body.is_discoverable = body.isDiscoverable;
+      delete body.isDiscoverable;
+    }
     const updated = await api.put<any>('/users/me', body);
     const p = mapProfile(updated);
     setProfile(p);
