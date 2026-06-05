@@ -165,6 +165,13 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
             <Text style={styles.scoreText}>⚡ {card.compatibilityScore}% match</Text>
           </View>
         )}
+        {card.interestCount !== undefined && (
+          <View style={styles.interestBadge}>
+            <Text style={styles.interestBadgeText}>
+              💡 {card.interestCount} {card.interestCount === 1 ? 'interested' : 'interested'}
+            </Text>
+          </View>
+        )}
         <View style={styles.nameRow}>
           <Text style={styles.cardName}>{card.name}</Text>
           {card.age ? <Text style={styles.cardAge}>, {card.age}</Text> : null}
@@ -254,4 +261,15 @@ const styles = StyleSheet.create({
   stampLike: { right: 20, borderColor: Colors.green, transform: [{ rotate: '12deg' }] },
   stampNope: { left: 20, borderColor: Colors.accent2, transform: [{ rotate: '-12deg' }] },
   stampText: { fontWeight: '800', fontSize: 30, letterSpacing: 2 },
+  interestBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,212,170,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,212,170,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginBottom: 4,
+  },
+  interestBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.green },
 });
