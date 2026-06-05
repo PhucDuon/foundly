@@ -143,7 +143,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <Row icon="📧" label="Email" value={profile?.email ?? '—'} />
           <View style={styles.divider} />
-          <Row icon="🚪" label="Log Out" onPress={async () => { await logout(); }} />
+          <Row icon="🚪" label="Log Out" onPress={async () => { await logout(); router.replace('/login' as any); }} />
           <View style={styles.divider} />
           <Row icon="🗑️" label="Delete Account" onPress={confirmDeleteAccount} danger />
         </View>
