@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
+import httpx
 from app.database import supabase
 from app.dependencies import get_current_user
 from app.schemas.user import UserRegister, UserLogin, AuthResponse
+from app.config import settings
 from app.utils import role_to_emoji
 
 router = APIRouter()
@@ -78,11 +80,22 @@ async def logout(current_user=Depends(get_current_user)):
 @router.delete("/me")
 async def delete_account(current_user=Depends(get_current_user)):
     uid = str(current_user.id)
+
+    # Delete profile row — FK cascades remove ideas, matches, swipes, messages
     supabase.table("profiles").delete().eq("id", uid).execute()
-    try:
-        supabase.auth.admin.delete_user(uid)
-    except Exception:
-        pass
+
+    # Delete the Supabase Auth user via Admin REST API (more reliable than supabase-py admin)
+    async with httpx.AsyncClient() as client:
+        resp = await client.delete(
+            f"{settings.SUPABASE_URL}/auth/v1/admin/users/{uid}",
+            headers={
+                "apikey": settings.SUPABASE_SERVICE_KEY,
+                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
+            },
+        )
+        if resp.status_code not in (200, 204):
+            raise HTTPException(status_code=500, detail=f"Failed to delete auth user: {resp.text}")
+
     return {"message": "Account deleted."}
 
 
