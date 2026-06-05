@@ -10,9 +10,23 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Colors } from '../../constants/Colors';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, UserProfile } from '../../context/AuthContext';
 import { Avatar } from '../../components/Avatar';
 import { api } from '../../services/api';
+
+type CheckItem = { label: string; done: boolean; impact: string };
+
+function getCompleteness(p: UserProfile): { pct: number; items: CheckItem[] } {
+  const items: CheckItem[] = [
+    { label: 'Profile photo',       done: !!p.avatarUrl,            impact: 'First impression' },
+    { label: 'Bio',                 done: !!p.bio,                  impact: 'Lets others know your story' },
+    { label: 'Location',            done: !!p.location,             impact: '+10 pts in compatibility' },
+    { label: '3+ skills',           done: p.skills.length >= 3,     impact: 'Better skill-fit matching' },
+    { label: 'Interests',           done: p.interests.length >= 2,  impact: 'Shared vision alignment' },
+  ];
+  const pct = Math.round((items.filter(i => i.done).length / items.length) * 100);
+  return { pct, items };
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -43,6 +57,9 @@ export default function ProfileScreen() {
   );
 
   if (!profile) return null;
+
+  const { pct, items } = getCompleteness(profile);
+  const incomplete = items.filter(i => !i.done);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -137,16 +154,49 @@ export default function ProfileScreen() {
           <Text style={styles.proBannerArrow}>›</Text>
         </TouchableOpacity>
 
-        {!profile.bio && profile.skills.length === 0 && (
-          <TouchableOpacity
-            style={styles.emptyPrompt}
-            onPress={() => router.push('/edit-profile')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.emptyPromptText}>
-              Your profile looks a bit empty.{'\n'}Tap to fill it in ✏️
-            </Text>
-          </TouchableOpacity>
+        {/* Profile completeness card — hide when 100% */}
+        {pct < 100 && (
+          <View style={styles.completenessCard}>
+            <View style={styles.completenessHeader}>
+              <Text style={styles.completenessTitle}>Profile strength</Text>
+              <Text style={[
+                styles.completenessPct,
+                { color: pct >= 80 ? Colors.green : pct >= 50 ? Colors.accent : Colors.accent2 },
+              ]}>{pct}%</Text>
+            </View>
+
+            {/* Progress bar */}
+            <View style={styles.progressTrack}>
+              <View style={[
+                styles.progressFill,
+                {
+                  width: `${pct}%` as any,
+                  backgroundColor: pct >= 80 ? Colors.green : pct >= 50 ? Colors.accent : Colors.accent2,
+                },
+              ]} />
+            </View>
+
+            {/* Missing items */}
+            <View style={styles.checkList}>
+              {incomplete.map(item => (
+                <TouchableOpacity
+                  key={item.label}
+                  style={styles.checkRow}
+                  onPress={() => router.push('/edit-profile')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.checkCircle}>
+                    <Text style={styles.checkCircleText}>+</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.checkLabel}>{item.label}</Text>
+                    <Text style={styles.checkImpact}>{item.impact}</Text>
+                  </View>
+                  <Text style={styles.checkArrow}>›</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         )}
 
         <View style={{ height: 32 }} />
@@ -222,4 +272,25 @@ const styles = StyleSheet.create({
   proBannerTitle: { fontWeight: '700', fontSize: 15, color: Colors.accent, marginBottom: 2 },
   proBannerSub: { fontSize: 12, color: Colors.muted },
   proBannerArrow: { fontSize: 22, color: Colors.accent },
+  completenessCard: {
+    marginHorizontal: 20, marginBottom: 20,
+    backgroundColor: Colors.surface, borderRadius: 20,
+    padding: 18, borderWidth: 1, borderColor: Colors.border,
+  },
+  completenessHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  completenessTitle: { fontWeight: '700', fontSize: 14, color: Colors.text },
+  completenessPct: { fontWeight: '800', fontSize: 16 },
+  progressTrack: { height: 6, backgroundColor: Colors.surface2, borderRadius: 3, marginBottom: 16, overflow: 'hidden' },
+  progressFill: { height: 6, borderRadius: 3 },
+  checkList: { gap: 10 },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  checkCircle: {
+    width: 28, height: 28, borderRadius: 14,
+    borderWidth: 1.5, borderColor: Colors.accent,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  checkCircleText: { color: Colors.accent, fontWeight: '700', fontSize: 16, lineHeight: 20 },
+  checkLabel: { fontSize: 13, fontWeight: '600', color: Colors.text, marginBottom: 1 },
+  checkImpact: { fontSize: 11, color: Colors.muted },
+  checkArrow: { fontSize: 20, color: Colors.muted },
 });
