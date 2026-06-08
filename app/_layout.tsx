@@ -70,6 +70,7 @@ export default function RootLayout() {
           <Stack.Screen name="likes" />
           <Stack.Screen name="paywall" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="auth" />
         </Stack>
       </MatchesProvider>
     </AuthProvider>
