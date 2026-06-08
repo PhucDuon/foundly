@@ -16,6 +16,7 @@ import { Colors } from '../constants/Colors';
 import { useAuth, ROLE_EMOJI } from '../context/AuthContext';
 import { Avatar } from '../components/Avatar';
 import { BASE_URL, getAuthToken } from '../services/api';
+import { LocationPicker } from '../components/LocationPicker';
 
 const ROLES = ['Developer', 'Designer', 'Product Manager', 'Marketer', 'Business Analyst', 'Other'];
 const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
@@ -137,7 +138,7 @@ export default function EditProfileScreen() {
           numberOfLines={3}
           textAlignVertical="top"
         />
-        <TextInput style={styles.input} placeholder="Location (e.g. Sydney, AU)" placeholderTextColor={Colors.muted} value={location} onChangeText={setLocation} />
+        <LocationPicker value={location} onChange={setLocation} placeholder="Search your city..." />
 
         <SectionLabel>Role</SectionLabel>
         <View style={styles.roleGrid}>
