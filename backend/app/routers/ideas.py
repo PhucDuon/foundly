@@ -58,15 +58,16 @@ async def my_ideas(current_user=Depends(get_current_user)):
 @router.post("")
 async def create_idea(data: IdeaCreate, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
-    idea = supabase.table("startup_ideas").insert({
-        "founder_id": uid,
-        "name": data.name,
-        "description": data.description,
-        "category": data.category,
-        "stage": data.stage,
-        "looking_for": data.looking_for,
-    }).execute()
-    return idea.data[0]
+    idea_id = supabase.rpc("create_startup_idea", {
+        "p_founder_id": uid,
+        "p_name": data.name,
+        "p_description": data.description,
+        "p_category": data.category,
+        "p_stage": data.stage,
+        "p_looking_for": data.looking_for,
+    }).execute().data
+    idea = supabase.table("startup_ideas").select("*").eq("id", idea_id).single().execute()
+    return idea.data
 
 
 @router.put("/{idea_id}")
