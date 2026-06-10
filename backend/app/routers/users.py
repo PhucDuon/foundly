@@ -86,6 +86,18 @@ async def block_user(user_id: str, current_user=Depends(get_current_user)):
         supabase.table("blocks").insert({"blocker_id": uid, "blocked_id": user_id}).execute()
     except Exception:
         pass  # already blocked
+
+    # Remove any existing match (clears chat + likes)
+    match = supabase.table("matches").select("id").or_(
+        f"and(user1_id.eq.{uid},user2_id.eq.{user_id}),and(user1_id.eq.{user_id},user2_id.eq.{uid})"
+    ).execute()
+    if match.data:
+        match_id = match.data[0]["id"]
+        try:
+            supabase.rpc("unmatch_users", {"p_match_id": match_id, "p_user_id": uid}).execute()
+        except Exception:
+            pass
+
     return {"ok": True}
 
 
