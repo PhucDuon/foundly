@@ -77,13 +77,15 @@ async def update_idea(idea_id: str, data: IdeaCreate, current_user=Depends(get_c
     founder_res = supabase.rpc("get_idea_founder", {"p_idea_id": idea_id}).execute()
     if not founder_res.data or founder_res.data != uid:
         raise HTTPException(status_code=403, detail="Not your idea.")
-    supabase.table("startup_ideas").update({
-        "name": data.name,
-        "description": data.description,
-        "category": data.category,
-        "stage": data.stage,
-        "looking_for": data.looking_for,
-    }).eq("id", idea_id).execute()
+    supabase.rpc("update_startup_idea", {
+        "p_idea_id": idea_id,
+        "p_founder_id": uid,
+        "p_name": data.name,
+        "p_description": data.description,
+        "p_category": data.category,
+        "p_stage": data.stage,
+        "p_looking_for": data.looking_for,
+    }).execute()
     result = supabase.rpc("get_my_ideas_with_counts", {"p_user_id": uid}).execute()
     updated = next((i for i in (result.data or []) if i["id"] == idea_id), None)
     return updated
@@ -128,10 +130,7 @@ async def express_interest(idea_id: str, current_user=Depends(get_current_user))
     if founder_id == uid:
         raise HTTPException(status_code=400, detail="Cannot express interest in your own idea.")
 
-    try:
-        supabase.table("idea_interests").insert({"user_id": uid, "idea_id": idea_id}).execute()
-    except Exception:
-        pass
+    supabase.rpc("insert_idea_interest", {"p_user_id": uid, "p_idea_id": idea_id}).execute()
 
     match_id = supabase.rpc("create_idea_match", {
         "p_user_id": uid, "p_founder_id": founder_id
@@ -166,5 +165,5 @@ async def delete_idea(idea_id: str, current_user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Idea not found.")
     if founder_res.data != uid:
         raise HTTPException(status_code=403, detail="Not your idea.")
-    supabase.table("startup_ideas").delete().eq("id", idea_id).execute()
+    supabase.rpc("delete_startup_idea", {"p_idea_id": idea_id, "p_founder_id": uid}).execute()
     return {"message": "Deleted."}
