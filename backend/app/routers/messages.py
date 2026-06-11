@@ -1,5 +1,4 @@
 import time
-from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from app.database import supabase
 from app.dependencies import get_current_user
@@ -24,17 +23,9 @@ async def get_messages(match_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
     _assert_match_member(match_id, uid)
 
-    # Mark received messages as read via RPC (supabase-py filters are unreliable)
     supabase.rpc("mark_messages_read", {"p_match_id": match_id, "p_reader_id": uid}).execute()
-
-    messages = (
-        supabase.table("messages")
-        .select("*")
-        .eq("match_id", match_id)
-        .order("sent_at")
-        .execute()
-    )
-    return messages.data
+    result = supabase.rpc("get_messages_for_match", {"p_match_id": match_id}).execute()
+    return result.data or []
 
 
 @router.post("/{match_id}")
@@ -45,10 +36,10 @@ async def send_message(match_id: str, data: MessageCreate, current_user=Depends(
     if not data.content.strip():
         raise HTTPException(status_code=422, detail="Message cannot be empty.")
 
-    message = supabase.table("messages").insert({
-        "match_id": match_id,
-        "sender_id": uid,
-        "content": data.content.strip(),
+    message = supabase.rpc("insert_message", {
+        "p_match_id": match_id,
+        "p_sender_id": uid,
+        "p_content": data.content.strip(),
     }).execute()
 
     # Notify the recipient
@@ -71,8 +62,7 @@ async def send_message(match_id: str, data: MessageCreate, current_user=Depends(
 async def mark_read(match_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
     _assert_match_member(match_id, uid)
-    now = datetime.now(timezone.utc).isoformat()
-    supabase.table("messages").update({"read_at": now}).eq("match_id", match_id).neq("sender_id", uid).execute()
+    supabase.rpc("mark_messages_read", {"p_match_id": match_id, "p_reader_id": uid}).execute()
     return {"ok": True}
 
 
