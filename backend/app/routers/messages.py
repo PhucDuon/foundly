@@ -10,12 +10,13 @@ router = APIRouter()
 
 
 def _assert_match_member(match_id: str, uid: str) -> dict:
-    match = supabase.table("matches").select("user1_id, user2_id").eq("id", match_id).maybe_single().execute()
-    if not match.data:
+    result = supabase.rpc("get_match_members", {"p_match_id": match_id}).execute()
+    if not result.data:
         raise HTTPException(status_code=404, detail="Match not found.")
-    if uid not in (match.data["user1_id"], match.data["user2_id"]):
+    match = result.data[0]
+    if uid not in (match["user1_id"], match["user2_id"]):
         raise HTTPException(status_code=403, detail="Not your match.")
-    return match.data
+    return match
 
 
 @router.get("/{match_id}")

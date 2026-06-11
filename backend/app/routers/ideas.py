@@ -66,15 +66,16 @@ async def create_idea(data: IdeaCreate, current_user=Depends(get_current_user)):
         "p_stage": data.stage,
         "p_looking_for": data.looking_for,
     }).execute().data
-    idea = supabase.table("startup_ideas").select("*").eq("id", idea_id).single().execute()
-    return idea.data
+    result = supabase.rpc("get_my_ideas_with_counts", {"p_user_id": uid}).execute()
+    created = next((i for i in (result.data or []) if i["id"] == idea_id), None)
+    return created
 
 
 @router.put("/{idea_id}")
 async def update_idea(idea_id: str, data: IdeaCreate, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
-    idea = supabase.table("startup_ideas").select("founder_id").eq("id", idea_id).maybe_single().execute()
-    if not idea.data or idea.data["founder_id"] != uid:
+    founder_res = supabase.rpc("get_idea_founder", {"p_idea_id": idea_id}).execute()
+    if not founder_res.data or founder_res.data != uid:
         raise HTTPException(status_code=403, detail="Not your idea.")
     supabase.table("startup_ideas").update({
         "name": data.name,
@@ -83,15 +84,16 @@ async def update_idea(idea_id: str, data: IdeaCreate, current_user=Depends(get_c
         "stage": data.stage,
         "looking_for": data.looking_for,
     }).eq("id", idea_id).execute()
-    result = supabase.table("startup_ideas").select("*").eq("id", idea_id).single().execute()
-    return result.data
+    result = supabase.rpc("get_my_ideas_with_counts", {"p_user_id": uid}).execute()
+    updated = next((i for i in (result.data or []) if i["id"] == idea_id), None)
+    return updated
 
 
 @router.get("/{idea_id}/interests")
 async def get_idea_interests(idea_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
-    idea = supabase.table("startup_ideas").select("founder_id").eq("id", idea_id).maybe_single().execute()
-    if not idea.data or idea.data["founder_id"] != uid:
+    founder_res = supabase.rpc("get_idea_founder", {"p_idea_id": idea_id}).execute()
+    if not founder_res.data or founder_res.data != uid:
         raise HTTPException(status_code=403, detail="Not your idea.")
 
     result = supabase.rpc("get_idea_interested_profiles", {
@@ -104,8 +106,8 @@ async def get_idea_interests(idea_id: str, current_user=Depends(get_current_user
 @router.post("/{idea_id}/accept/{user_id}")
 async def accept_interest(idea_id: str, user_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
-    idea = supabase.table("startup_ideas").select("founder_id").eq("id", idea_id).maybe_single().execute()
-    if not idea.data or idea.data["founder_id"] != uid:
+    founder_res = supabase.rpc("get_idea_founder", {"p_idea_id": idea_id}).execute()
+    if not founder_res.data or founder_res.data != uid:
         raise HTTPException(status_code=403, detail="Not your idea.")
     match_id = supabase.rpc("create_idea_match", {
         "p_user_id": user_id, "p_founder_id": uid,
@@ -117,18 +119,11 @@ async def accept_interest(idea_id: str, user_id: str, current_user=Depends(get_c
 async def express_interest(idea_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
 
-    idea = (
-        supabase.table("startup_ideas")
-        .select("*, founder:profiles!founder_id(id, name, emoji, role, push_token)")
-        .eq("id", idea_id)
-        .maybe_single()
-        .execute()
-    )
-    if not idea.data:
+    rows = supabase.rpc("get_idea_with_founder", {"p_idea_id": idea_id}).execute()
+    if not rows.data:
         raise HTTPException(status_code=404, detail="Idea not found.")
-
-    founder = idea.data["founder"]
-    founder_id = idea.data["founder_id"]
+    row = rows.data[0]
+    founder_id = row["founder_id"]
 
     if founder_id == uid:
         raise HTTPException(status_code=400, detail="Cannot express interest in your own idea.")
@@ -138,32 +133,27 @@ async def express_interest(idea_id: str, current_user=Depends(get_current_user))
     except Exception:
         pass
 
-    prev_count = supabase.table("matches").select("id").or_(
-        f"and(user1_id.eq.{uid},user2_id.eq.{founder_id}),and(user1_id.eq.{founder_id},user2_id.eq.{uid})"
-    ).execute()
-    is_new = not bool(prev_count.data)
     match_id = supabase.rpc("create_idea_match", {
         "p_user_id": uid, "p_founder_id": founder_id
     }).execute().data
 
-    if is_new:
-        me = supabase.table("profiles").select("name").eq("id", uid).single().execute()
-        my_name = me.data["name"] if me.data else "Someone"
-        await send_push(
-            founder.get("push_token"),
-            "🚀 New Interest!",
-            f"{my_name} is interested in {idea.data['name']}!",
-            {"type": "idea_interest", "match_id": match_id},
-        )
+    me = supabase.table("profiles").select("name").eq("id", uid).single().execute()
+    my_name = me.data["name"] if me.data else "Someone"
+    await send_push(
+        row.get("push_token"),
+        "🚀 New Interest!",
+        f"{my_name} is interested in {row['idea_name']}!",
+        {"type": "idea_interest", "match_id": match_id},
+    )
 
     return {
         "matched": True,
         "match": {"id": match_id},
         "founder": {
             "id": founder_id,
-            "name": founder["name"],
-            "emoji": founder["emoji"],
-            "role": founder["role"],
+            "name": row["founder_name"],
+            "emoji": row["founder_emoji"],
+            "role": row["founder_role"],
         },
     }
 
@@ -171,10 +161,10 @@ async def express_interest(idea_id: str, current_user=Depends(get_current_user))
 @router.delete("/{idea_id}")
 async def delete_idea(idea_id: str, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
-    idea = supabase.table("startup_ideas").select("founder_id").eq("id", idea_id).maybe_single().execute()
-    if not idea.data:
+    founder_res = supabase.rpc("get_idea_founder", {"p_idea_id": idea_id}).execute()
+    if not founder_res.data:
         raise HTTPException(status_code=404, detail="Idea not found.")
-    if idea.data["founder_id"] != uid:
+    if founder_res.data != uid:
         raise HTTPException(status_code=403, detail="Not your idea.")
     supabase.table("startup_ideas").delete().eq("id", idea_id).execute()
     return {"message": "Deleted."}
