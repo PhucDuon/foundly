@@ -10,7 +10,5 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 export function setRealtimeSession(token: string | null) {
-  if (token) {
-    supabase.realtime.setAuth(token);
-  }
+  supabase.realtime.setAuth(token);
 }

@@ -164,7 +164,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const redirectUri = Linking.createURL('auth');
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: redirectUri, skipBrowserRedirect: true },
+      options: {
+        redirectTo: redirectUri,
+        skipBrowserRedirect: true,
+        queryParams: { prompt: 'select_account' },
+      },
     });
     if (error || !data.url) throw new Error(error?.message || 'Google sign-in failed');
 

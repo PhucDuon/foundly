@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { useAuth } from './AuthContext';
 
@@ -45,6 +45,13 @@ export function MatchesProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useAuth();
   const [matches, setMatches] = useState<MatchEntry[]>([]);
   const [likesCount, setLikesCount] = useState(0);
+
+  useEffect(() => {
+    if (!profile) {
+      setMatches([]);
+      setLikesCount(0);
+    }
+  }, [profile]);
 
   const fetchMatches = useCallback(async () => {
     if (!profile) return;

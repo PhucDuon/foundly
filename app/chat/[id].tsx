@@ -83,10 +83,14 @@ export default function ChatScreen() {
   // Ref-based ID set so Realtime handler is never stale (avoids React batching race)
   const knownIds = useRef(new Set<string>());
 
-  const { removeMatch } = useMatches();
+  const { removeMatch, fetchMatches } = useMatches();
   const matchEntry = matches.find(m => m.matchId === matchId);
   const displayName = matchEntry?.name ?? 'Match';
   const displayEmoji = matchEntry?.emoji ?? '🤝';
+
+  useEffect(() => {
+    if (matchId && !matchEntry) fetchMatches();
+  }, [matchId, matchEntry, fetchMatches]);
 
   const doUnmatch = async () => {
     try {
