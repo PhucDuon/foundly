@@ -40,38 +40,8 @@ async def swipe(data: SwipeRequest, current_user=Depends(get_current_user)):
 @router.get("")
 async def get_matches(current_user=Depends(get_current_user)):
     uid = str(current_user.id)
-    matches = (
-        supabase.table("matches")
-        .select("*, user1:profiles!user1_id(*), user2:profiles!user2_id(*)")
-        .or_(f"user1_id.eq.{uid},user2_id.eq.{uid}")
-        .execute()
-    )
-    if not matches.data:
-        return []
-
-    # Attach last message time so we can sort by most recent activity
-    enriched = []
-    for m in matches.data:
-        last = (
-            supabase.table("messages")
-            .select("sent_at")
-            .eq("match_id", m["id"])
-            .order("sent_at", desc=True)
-            .limit(1)
-            .execute()
-        )
-        last_at = last.data[0]["sent_at"] if last.data else m["matched_at"]
-        enriched.append({**m, "last_message_at": last_at})
-
-    enriched.sort(key=lambda x: x["last_message_at"], reverse=True)
-
-    # Tag matches that have unread messages
-    unread = supabase.rpc("get_unread_match_ids", {"p_user_id": uid}).execute()
-    unread_ids = set(unread.data or [])
-    for m in enriched:
-        m["has_unread"] = m["id"] in unread_ids
-
-    return enriched
+    result = supabase.rpc("get_matches_for_user", {"p_user_id": uid}).execute()
+    return result.data or []
 
 
 @router.get("/likes")
