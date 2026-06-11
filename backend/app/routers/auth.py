@@ -24,6 +24,12 @@ async def register(data: UserRegister):
     if not user or not session:
         raise HTTPException(status_code=400, detail="Registration failed — check your email for confirmation.")
 
+    # Auto-confirm email so Google OAuth with the same email auto-links to this account
+    try:
+        supabase.auth.admin.update_user_by_id(str(user.id), {"email_confirm": True})
+    except Exception:
+        pass
+
     profile_data = {
         "id": str(user.id),
         "name": data.name,
@@ -44,6 +50,7 @@ async def register(data: UserRegister):
 
     return {
         "access_token": session.access_token,
+        "refresh_token": session.refresh_token or "",
         "token_type": "bearer",
         "user": profile.data[0],
     }
@@ -66,6 +73,7 @@ async def login(data: UserLogin):
 
     return {
         "access_token": session.access_token,
+        "refresh_token": session.refresh_token or "",
         "token_type": "bearer",
         "user": profile.data,
     }
