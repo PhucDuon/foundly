@@ -71,6 +71,7 @@ export default function RootLayout() {
           <Stack.Screen name="paywall" />
           <Stack.Screen name="settings" />
           <Stack.Screen name="auth" />
+          <Stack.Screen name="linkedin-callback" />
         </Stack>
       </MatchesProvider>
     </AuthProvider>
