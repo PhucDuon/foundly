@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from app.database import supabase
 from app.dependencies import get_current_user
 from app.schemas.user import UserProfileUpdate
+from app.services.email import send_report_email
 from app.utils import role_to_emoji, compute_compatibility
 
 router = APIRouter()
@@ -104,11 +105,22 @@ async def block_user(user_id: str, current_user=Depends(get_current_user)):
 @router.post("/{user_id}/report")
 async def report_user(user_id: str, body: dict, current_user=Depends(get_current_user)):
     uid = str(current_user.id)
+    reason = body.get("reason", "other")
     supabase.table("reports").insert({
         "reporter_id": uid,
         "reported_id": user_id,
-        "reason": body.get("reason", "other"),
+        "reason": reason,
     }).execute()
+
+    reported = supabase.table("profiles").select("email").eq("id", user_id).maybe_single().execute()
+    reported_email = reported.data["email"] if reported.data else user_id
+    await send_report_email(
+        reporter_email=current_user.email or uid,
+        reported_email=reported_email,
+        reported_id=user_id,
+        reason=reason,
+    )
+
     return {"ok": True}
 
 
