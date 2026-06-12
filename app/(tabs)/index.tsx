@@ -79,6 +79,7 @@ export default function DiscoverScreen() {
           match: false,
           compatibilityScore: u.compatibility_score,
           avatarUrl: u.avatar_url ?? null,
+          linkedinVerified: u.linkedin_verified ?? false,
         }))
       );
     } catch {

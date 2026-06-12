@@ -175,6 +175,11 @@ export const SwipeCard = forwardRef<SwipeCardHandle, Props>(function SwipeCard(
         <View style={styles.nameRow}>
           <Text style={styles.cardName}>{card.name}</Text>
           {card.age ? <Text style={styles.cardAge}>, {card.age}</Text> : null}
+          {card.linkedinVerified && (
+            <View style={styles.linkedinBadge}>
+              <Text style={styles.linkedinBadgeText}>in ✓</Text>
+            </View>
+          )}
         </View>
         <View style={styles.roleBadge}>
           <Text style={styles.roleText} numberOfLines={1}>{card.role}</Text>
@@ -272,4 +277,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   interestBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.green },
+  linkedinBadge: { backgroundColor: '#0A66C2', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2 },
+  linkedinBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
 });

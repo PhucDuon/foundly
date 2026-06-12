@@ -10,6 +10,7 @@ export type CardData = {
   compatibilityScore?: number;
   interestCount?: number;
   avatarUrl?: string | null;
+  linkedinVerified?: boolean;
 };
 
 export const founderCards: CardData[] = [

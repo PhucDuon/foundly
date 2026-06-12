@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str
     RESEND_API_KEY: str = ""
     ADMIN_EMAIL: str = ""
+    LINKEDIN_CLIENT_ID: str = ""
+    LINKEDIN_CLIENT_SECRET: str = ""
 
     model_config = {"env_file": ".env"}
 

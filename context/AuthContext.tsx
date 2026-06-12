@@ -20,6 +20,7 @@ export type UserProfile = {
   emoji: string;
   avatarUrl: string | null;
   isDiscoverable: boolean;
+  linkedinVerified: boolean;
 };
 
 export type RegisterData = {
@@ -41,6 +42,7 @@ type AuthContextValue = {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  verifyWithLinkedIn: () => Promise<void>;
 };
 
 export const ROLE_EMOJI: Record<string, string> = {
@@ -69,6 +71,7 @@ function mapProfile(raw: any): UserProfile {
     emoji:           raw.emoji ?? '🚀',
     avatarUrl:       raw.avatar_url ?? raw.avatarUrl ?? null,
     isDiscoverable:  raw.is_discoverable ?? true,
+    linkedinVerified: raw.linkedin_verified ?? false,
   };
 }
 
@@ -81,6 +84,7 @@ const AuthContext = createContext<AuthContextValue>({
   register: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
+  verifyWithLinkedIn: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -207,8 +211,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(p));
   }, []);
 
+  const verifyWithLinkedIn = useCallback(async () => {
+    const redirectUri = Linking.createURL('linkedin-callback');
+    const clientId = '78q2hxn8v9wpf8'; // set your LinkedIn Client ID here
+    const authUrl =
+      `https://www.linkedin.com/oauth/v2/authorization` +
+      `?response_type=code` +
+      `&client_id=${clientId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=openid%20profile%20email` +
+      `&state=${Math.random().toString(36).slice(2)}`;
+
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+    if (result.type !== 'success') throw new Error('LinkedIn verification cancelled.');
+
+    const query = result.url.split('?')[1] || '';
+    const code = new URLSearchParams(query).get('code');
+    if (!code) throw new Error('No code received from LinkedIn.');
+
+    await api.post('/auth/linkedin/verify', { code, redirect_uri: redirectUri });
+    const fresh = await api.get<any>('/auth/me');
+    const p = mapProfile(fresh);
+    setProfile(p);
+    await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(p));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn: !!profile, isLoading, profile, login, loginWithGoogle, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ isLoggedIn: !!profile, isLoading, profile, login, loginWithGoogle, register, logout, updateProfile, verifyWithLinkedIn }}>
       {children}
     </AuthContext.Provider>
   );

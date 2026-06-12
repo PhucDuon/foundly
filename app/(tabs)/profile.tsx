@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
 import { Colors } from '../../constants/Colors';
 import { useAuth, UserProfile } from '../../context/AuthContext';
 import { Avatar } from '../../components/Avatar';
@@ -47,8 +47,21 @@ const sectionStyles = StyleSheet.create({
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile } = useAuth();
+  const { profile, verifyWithLinkedIn } = useAuth();
   const [ideasCount, setIdeasCount] = useState(0);
+  const [verifying, setVerifying] = useState(false);
+
+  const handleLinkedInVerify = async () => {
+    setVerifying(true);
+    try {
+      await verifyWithLinkedIn();
+      Alert.alert('Verified!', 'Your LinkedIn profile has been verified.');
+    } catch (e: any) {
+      Alert.alert('Verification failed', e.message ?? 'Please try again.');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -82,11 +95,30 @@ export default function ProfileScreen() {
         <View style={styles.hero}>
           <Avatar avatarUrl={profile.avatarUrl} emoji={profile.emoji} size={80} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{profile.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.name}>{profile.name}</Text>
+              {profile.linkedinVerified && (
+                <View style={styles.linkedinBadge}>
+                  <Text style={styles.linkedinBadgeText}>in ✓</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.role}>
               {profile.role}{profile.experienceLevel ? ` · ${profile.experienceLevel}` : ''}
             </Text>
             {!!profile.location && <Text style={styles.loc}>📍 {profile.location}</Text>}
+            {!profile.linkedinVerified && (
+              <TouchableOpacity
+                style={[styles.linkedinBtn, verifying && { opacity: 0.6 }]}
+                onPress={handleLinkedInVerify}
+                disabled={verifying}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.linkedinBtnText}>
+                  {verifying ? 'Verifying…' : 'in  Verify with LinkedIn'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -293,4 +325,15 @@ const styles = StyleSheet.create({
   checkLabel: { fontSize: 13, fontWeight: '600', color: Colors.text, marginBottom: 1 },
   checkImpact: { fontSize: 11, color: Colors.muted },
   checkArrow: { fontSize: 20, color: Colors.muted },
+  linkedinBadge: {
+    backgroundColor: '#0A66C2', borderRadius: 6,
+    paddingHorizontal: 6, paddingVertical: 2,
+  },
+  linkedinBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  linkedinBtn: {
+    marginTop: 8, alignSelf: 'flex-start',
+    backgroundColor: '#0A66C2', borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 5,
+  },
+  linkedinBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 });

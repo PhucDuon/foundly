@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, users, matches, messages, ideas, notifications
+from app.routers import auth, users, matches, messages, ideas, notifications, linkedin
 
 app = FastAPI(title="StartupMatch API", version="1.0.0")
 
@@ -19,6 +19,7 @@ app.include_router(matches.router,  prefix="/matches",  tags=["Matches"])
 app.include_router(messages.router, prefix="/messages", tags=["Messages"])
 app.include_router(ideas.router,         prefix="/ideas",         tags=["Ideas"])
 app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
+app.include_router(linkedin.router,      prefix="/auth/linkedin",  tags=["LinkedIn"])
 
 
 @app.get("/")
