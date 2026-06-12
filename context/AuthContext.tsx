@@ -212,24 +212,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const verifyWithLinkedIn = useCallback(async () => {
-    const redirectUri = Linking.createURL('linkedin-callback');
-    const clientId = '78q2hxn8v9wpf8'; // set your LinkedIn Client ID here
-    const authUrl =
-      `https://www.linkedin.com/oauth/v2/authorization` +
-      `?response_type=code` +
-      `&client_id=${clientId}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&scope=openid%20profile%20email` +
-      `&state=${Math.random().toString(36).slice(2)}`;
+    const deepLink = Linking.createURL('linkedin-callback');
+    const token = await AsyncStorage.getItem(TOKEN_KEY) ?? '';
+    const { url } = await api.get<any>('/auth/linkedin/start?token=' + encodeURIComponent(token));
 
-    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+    const result = await WebBrowser.openAuthSessionAsync(url, deepLink);
     if (result.type !== 'success') throw new Error('LinkedIn verification cancelled.');
 
     const query = result.url.split('?')[1] || '';
-    const code = new URLSearchParams(query).get('code');
-    if (!code) throw new Error('No code received from LinkedIn.');
+    const params = new URLSearchParams(query);
+    if (params.get('error')) throw new Error('LinkedIn verification failed.');
 
-    await api.post('/auth/linkedin/verify', { code, redirect_uri: redirectUri });
     const fresh = await api.get<any>('/auth/me');
     const p = mapProfile(fresh);
     setProfile(p);
