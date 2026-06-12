@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
+import { AntDesign } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { useAuth, ROLE_EMOJI, RegisterData } from '../../context/AuthContext';
 
@@ -38,7 +39,7 @@ const STEP_SUBS = [
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { register, isLoggedIn, isLoading } = useAuth();
+  const { register, loginWithGoogle, isLoggedIn, isLoading } = useAuth();
 
   if (isLoading) return null;
   if (isLoggedIn) return <Redirect href={'/' as any} />;
@@ -117,6 +118,30 @@ export default function RegisterScreen() {
         {/* Step 1: Basic info */}
         {step === 1 && (
           <View style={styles.fields}>
+            <TouchableOpacity
+              style={styles.btnGoogle}
+              onPress={async () => {
+                setLoading(true);
+                setError('');
+                try { await loginWithGoogle(); }
+                catch (e) {
+                  const msg = (e as Error).message || '';
+                  if (msg !== 'Sign-in was cancelled') setError(msg);
+                } finally { setLoading(false); }
+              }}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              <AntDesign name="google" size={20} color="#4285F4" />
+              <Text style={styles.btnGoogleText}>Continue with Google</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
             <TextInput style={styles.input} placeholder="Full name" placeholderTextColor={Colors.muted} value={name} onChangeText={setName} />
             <TextInput style={styles.input} placeholder="Email address" placeholderTextColor={Colors.muted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
             <TextInput style={styles.input} placeholder="Password (min 6 chars)" placeholderTextColor={Colors.muted} value={password} onChangeText={setPassword} secureTextEntry />
@@ -254,6 +279,16 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: Colors.border,
     backgroundColor: Colors.bg,
   },
+  btnGoogle: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    borderRadius: 16, paddingVertical: 15,
+    borderWidth: 1.5, borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  btnGoogleText: { color: Colors.text, fontWeight: '600', fontSize: 15 },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
+  dividerText: { color: Colors.muted, fontSize: 13 },
   btnNext: {
     backgroundColor: Colors.accent, borderRadius: 18, paddingVertical: 17,
     alignItems: 'center',
