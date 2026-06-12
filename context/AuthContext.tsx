@@ -221,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const query = result.url.split('?')[1] || '';
     const params = new URLSearchParams(query);
-    if (params.get('error')) throw new Error('LinkedIn verification failed.');
+    if (params.get('error')) throw new Error(`LinkedIn error: ${params.get('error')}`);
 
     const fresh = await api.get<any>('/auth/me');
     const p = mapProfile(fresh);
