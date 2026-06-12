@@ -86,7 +86,7 @@ async def linkedin_callback(code: str = "", state: str = "", error: str = ""):
             return RedirectResponse(f"{APP_DEEP_LINK}?error=invalid_token")
 
         uid = str(user_resp.user.id)
-        supabase.table("profiles").update({"linkedin_verified": True}).eq("id", uid).execute()
+        supabase.rpc("set_linkedin_verified", {"p_user_id": uid}).execute()
 
         return RedirectResponse(f"{APP_DEEP_LINK}?success=true")
 
