@@ -30,7 +30,7 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
   if (_token) headers['Authorization'] = `Bearer ${_token}`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000); // 10 s timeout
+  const timeout = setTimeout(() => controller.abort(), 30_000);
 
   try {
     const res = await fetch(`${BASE_URL}${path}`, {
