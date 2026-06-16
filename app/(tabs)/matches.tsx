@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -11,16 +11,29 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { useMatches } from '../../context/MatchesContext';
 import { Avatar } from '../../components/Avatar';
+import { api } from '../../services/api';
+
+type PendingLike = {
+  id: string;
+  name: string;
+  emoji: string;
+  role: string;
+  bio: string;
+  avatar_url: string | null;
+  linkedin_verified: boolean;
+};
 
 export default function MatchesScreen() {
   const router = useRouter();
   const { matches, fetchMatches, likesCount, fetchLikesCount } = useMatches();
+  const [pendingLikes, setPendingLikes] = useState<PendingLike[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       const id = setTimeout(() => {
         fetchMatches();
         fetchLikesCount();
+        api.get<PendingLike[]>('/matches/my-likes').then(setPendingLikes).catch(() => {});
       }, 600);
       return () => clearTimeout(id);
     }, [fetchMatches, fetchLikesCount])
@@ -65,6 +78,28 @@ export default function MatchesScreen() {
             </View>
             <Text style={styles.likesArrow}>›</Text>
           </TouchableOpacity>
+        )}
+
+        {/* Pending likes — people I liked who haven't matched back */}
+        {pendingLikes.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Waiting for a match ({pendingLikes.length})</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 4, gap: 14, marginBottom: 24 }}
+            >
+              {pendingLikes.map(p => (
+                <View key={p.id} style={styles.pendingItem}>
+                  <View style={{ opacity: 0.5 }}>
+                    <Avatar avatarUrl={p.avatar_url} emoji={p.emoji} size={62} />
+                  </View>
+                  <Text style={styles.pendingName}>{p.name.split(' ')[0]}</Text>
+                  <Text style={styles.pendingLabel}>Waiting…</Text>
+                </View>
+              ))}
+            </ScrollView>
+          </>
         )}
 
         {matches.length === 0 && likesCount === 0 ? (
@@ -164,4 +199,7 @@ const styles = StyleSheet.create({
   tapHint: { fontSize: 11, color: Colors.muted },
   tapHintUnread: { color: Colors.accent, fontWeight: '600' },
   unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: Colors.accent },
+  pendingItem: { alignItems: 'center', gap: 4, width: 70 },
+  pendingName: { fontSize: 12, color: Colors.muted, textAlign: 'center' },
+  pendingLabel: { fontSize: 10, color: Colors.muted, opacity: 0.6 },
 });

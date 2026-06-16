@@ -44,6 +44,14 @@ async def get_matches(current_user=Depends(get_current_user)):
     return result.data or []
 
 
+@router.get("/my-likes")
+async def get_my_likes(current_user=Depends(get_current_user)):
+    """People I swiped right on who haven't matched back yet."""
+    uid = str(current_user.id)
+    result = supabase.rpc("get_my_likes", {"p_user_id": uid}).execute()
+    return result.data or []
+
+
 @router.get("/likes")
 async def get_likes(current_user=Depends(get_current_user)):
     """People who swiped right on me that I haven't responded to yet."""
