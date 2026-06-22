@@ -21,10 +21,11 @@ async def swipe(data: SwipeRequest, current_user=Depends(get_current_user)):
     if not result.data:
         raise HTTPException(status_code=500, detail="Swipe processing failed.")
 
-    # Notify the other user about a brand-new match
+    other = supabase.table("profiles").select("name, push_token").eq("id", data.swiped_id).single().execute()
+
     if result.data.get("matched") and result.data.get("is_new"):
+        # Mutual match — tell both sides
         me = supabase.table("profiles").select("name").eq("id", uid).single().execute()
-        other = supabase.table("profiles").select("name, push_token").eq("id", data.swiped_id).single().execute()
         my_name = me.data["name"] if me.data else "Someone"
         if other.data and other.data.get("push_token"):
             await send_push(
@@ -32,6 +33,15 @@ async def swipe(data: SwipeRequest, current_user=Depends(get_current_user)):
                 "🎉 New Match!",
                 f"You matched with {my_name}! Say hello 👋",
                 {"type": "match", "match_id": result.data["match"]["id"]},
+            )
+    elif data.direction == "right" and not result.data.get("matched"):
+        # One-sided like — nudge them to open the app
+        if other.data and other.data.get("push_token"):
+            await send_push(
+                other.data["push_token"],
+                "💜 Someone liked you!",
+                "Open Foundly to see who and connect instantly.",
+                {"type": "like"},
             )
 
     return result.data
