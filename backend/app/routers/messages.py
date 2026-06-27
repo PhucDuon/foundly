@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from app.database import supabase
 from app.dependencies import get_current_user
 from app.schemas.message import MessageCreate
-from app.services.notifications import send_push
+from app.services.notifications import get_profile_name, push_to_user
 
 router = APIRouter()
 
@@ -44,12 +44,9 @@ async def send_message(match_id: str, data: MessageCreate, current_user=Depends(
 
     # Notify the recipient
     recipient_id = match["user2_id"] if match["user1_id"] == uid else match["user1_id"]
-    sender = supabase.table("profiles").select("name").eq("id", uid).single().execute()
-    recipient = supabase.table("profiles").select("push_token").eq("id", recipient_id).single().execute()
-    sender_name = sender.data["name"] if sender.data else "Someone"
-
-    await send_push(
-        recipient.data.get("push_token") if recipient.data else None,
+    sender_name = await get_profile_name(uid)
+    await push_to_user(
+        recipient_id,
         f"💬 {sender_name}",
         data.content.strip()[:100],
         {"type": "message", "match_id": match_id},

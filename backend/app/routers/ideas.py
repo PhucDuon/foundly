@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.database import supabase
 from app.dependencies import get_current_user
 from app.schemas.idea import IdeaCreate
-from app.services.notifications import send_push
+from app.services.notifications import send_push, get_profile_name
 
 router = APIRouter()
 
@@ -136,8 +136,7 @@ async def express_interest(idea_id: str, current_user=Depends(get_current_user))
         "p_user_id": uid, "p_founder_id": founder_id
     }).execute().data
 
-    me = supabase.table("profiles").select("name").eq("id", uid).single().execute()
-    my_name = me.data["name"] if me.data else "Someone"
+    my_name = await get_profile_name(uid)
     await send_push(
         row.get("push_token"),
         "🚀 New Interest!",
